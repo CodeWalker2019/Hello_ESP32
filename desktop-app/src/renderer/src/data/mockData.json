@@ -1,0 +1,6 @@
+{
+  "devices": [
+    { "codename": "KESTREL-04", "id": "ESP32:9F:2C:1A", "rssi": -42 },
+    { "codename": "KESTREL-11", "id": "ESP32:3B:88:C0", "rssi": -67 }
+  ]
+}

@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-amber: #ffb000;
+  --color-amber-dim: #7a5a1e;
+  --color-bg: #14120e;
+  --color-bg-header: #0f0d09;
+  --color-panel: #1c1912;
+  --color-fg: #f2e9d8;
+  --color-fg-dim: #8c8370;
+  --color-good: #6fcb9f;
+  --color-divider: #2a2519;
+
+  --font-display: 'Oswald', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --animate-spin-slow: spin-slow 2.4s linear infinite;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@utility bg-grid-lines {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-amber-dim) 20%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-amber-dim) 20%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
