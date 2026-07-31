@@ -14,6 +14,14 @@
 
 #define LED_BRIGHTNESS_50_PERCENT  ((1 << 13) / 2)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ledc_led_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
