@@ -7,7 +7,7 @@
 
 static UsbTransport usbTransport;
 static TransportManager transportManager;
-static ConnectionManager connectionManager({&usbTransport, nullptr}); // nullptr — WifiTransport ще не готовий
+static ConnectionManager connectionManager({&usbTransport, nullptr});
 
 extern "C" void app_bridge_init(void) {
     led_status_init();
