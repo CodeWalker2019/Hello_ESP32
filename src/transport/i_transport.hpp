@@ -36,6 +36,18 @@ public:
     virtual bool init() = 0;
 
     /**
+     * @brief Checks whether this transport currently has a live, working connection.
+     * 
+     * Semantics differ per implementation: for USB, this reflects an
+     * ongoing heartbeat from the host; for WiFi, this reflects the
+     * underlying TCP socket state. ConnectionManager uses this to
+     * arbitrate between multiple available transports.
+     * 
+     * @return true if the transport is currently ready to send data.
+     */
+    virtual bool isReady() const = 0;
+
+    /**
      * @brief Transmits a raw buffer of data over the transport.
      * 
      * Uses a raw pointer and length rather than dynamic containers (like std::vector) 

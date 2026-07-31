@@ -1,24 +1,48 @@
 #include "connection/connection_manager.hpp"
 #include <esp_log.h>
 
-ConnectionManager::ConnectionManager() {}
+static const char* TAG = "ConnectionManager";
 
-ConnectionManager::~ConnectionManager() {}
+ConnectionManager::ConnectionManager(std::array<ITransport*, kTransportCount> transports)
+    : transportsList(transports) {}
 
-void ConnectionManager::init(ITransport* transport) {
-    activeTransport = transport;
-    const bool success_init = transport -> init();
-
-    if (!success_init) {
-      ESP_LOGE("ConnectionManager", "transport init failed");
+void ConnectionManager::init() {
+    for (ITransport* transport : transportsList) {
+        if (transport != nullptr) {
+            transport->init();
+        }
     }
 }
 
-void ConnectionManager::sendTelemetry(const uint8_t* data, size_t len) {
-    if (activeTransport == nullptr) {
-      ESP_LOGE("ConnectionManager", "send telemtry failed; activeTransport is not assigned");
-      return;
+void ConnectionManager::addOnTransportChangeListener(TransportChangeCallback callback) {
+    onTransportChangeListeners.push_back(callback);
+}
+
+void ConnectionManager::notifyListeners(ITransport* transport) {
+    for (auto& listener : onTransportChangeListeners) {
+        listener(transport);
+    }
+}
+
+void ConnectionManager::update() {
+    ITransport* readyTransport = listenReadyTransport();
+
+    if (readyTransport != activeTransport) {
+        activeTransport = readyTransport;
+        notifyListeners(activeTransport);
+    }
+}
+
+ITransport* ConnectionManager::listenReadyTransport() {
+    if (activeTransport != nullptr && activeTransport->isReady()) {
+        return activeTransport;
     }
 
-    activeTransport -> send(data, len);
+    for (ITransport* transport : transportsList) {
+        if (transport != nullptr && transport->isReady()) {
+            return transport;
+        }
+    }
+
+    return nullptr;
 }

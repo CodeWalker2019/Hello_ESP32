@@ -6,7 +6,7 @@ void app_main(void) {
     app_bridge_init();
 
     while (1) {
-        app_bridge_send_test_data();
+        app_bridge_connection_manager_worker();
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
