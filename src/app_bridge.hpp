@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 void app_bridge_init(void);
-void app_bridge_send_test_data(void);
+void app_bridge_connection_manager_worker(void);
 
 #ifdef __cplusplus
 }

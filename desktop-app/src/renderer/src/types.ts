@@ -4,4 +4,9 @@ export interface ScannedDevice {
   rssi: number
 }
 
-export type ScreenId = 'search' | 'visualize'
+export const SCREEN = {
+  SEARCH: 'search',
+  VISUALIZE: 'visualize'
+} as const
+
+export type ScreenId = (typeof SCREEN)[keyof typeof SCREEN]

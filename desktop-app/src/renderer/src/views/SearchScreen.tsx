@@ -1,14 +1,41 @@
+import { useState, useEffect } from 'react'
 import { Radio, Usb, Wifi } from 'lucide-react'
 import DeviceCard from '@renderer/components/DeviceCard'
 import ScanSweep from '@renderer/components/ScanSweep'
-import mockData from '@renderer/data/mockData.json'
 import { useDeviceConnection } from '@renderer/helpers/useDeviceConnection'
 import type { ScannedDevice } from '@renderer/types'
 
-const devices = mockData.devices as ScannedDevice[]
-
 function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.Element {
   const { connectingId, connect } = useDeviceConnection(onConnected)
+  const [devices, setDevices] = useState<ScannedDevice[]>([])
+  const [isScanning, setIsScanning] = useState<boolean>(true)
+
+  // Scan for real ESP32 ports on component mount
+  useEffect(() => {
+    async function performScan() {
+      setIsScanning(true)
+      try {
+        const foundPorts = await window.api.scanPorts()
+        console.log('Found ESP32 ports:', foundPorts)
+        
+        // Map raw serial port metadata to match your ScannedDevice type structure
+        const mappedDevices: ScannedDevice[] = foundPorts.map((port: any) => ({
+          id: port.path,
+          codename: `Kestrel-${port.path.split('/').pop()}`,
+          rssi: 0,
+          type: 'usb'
+        }))
+
+        setDevices(mappedDevices)
+      } catch (err) {
+        console.error('Error scanning for ESP32 devices:', err)
+      } finally {
+        setIsScanning(false)
+      }
+    }
+
+    performScan()
+  }, [])
 
   return (
     <div className="flex h-full flex-col items-center px-8 py-12">
@@ -19,20 +46,26 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
         </span>
       </div>
       <h1 className="mt-1 mb-8 self-start font-display text-3xl font-medium tracking-[0.02em] uppercase">
-        Searching for beacon
+        {isScanning ? 'Searching for beacon...' : devices.length > 0 ? 'Devices Found' : 'No Devices Found'}
       </h1>
 
       <ScanSweep />
 
       <div className="my-7 font-mono text-xs tracking-[0.05em] text-fg-dim">
-        BROADCASTING ON <span className="text-amber">DroneTelemetry-AP</span> &middot; CHANNEL 6
+        {isScanning ? (
+          <span className="text-amber">SCANNING SERIAL PORTS...</span>
+        ) : (
+          <span>FOUND {devices.length} COMPATIBLE DEVICE(S)</span>
+        )}
       </div>
 
       <div className="flex w-full max-w-[420px] flex-col gap-2.5">
         {devices.map((device) => (
           <DeviceCard
             key={device.id}
-            {...device}
+            codename={device.codename}
+            id={device.id}
+            rssi={device.rssi}
             connecting={connectingId === device.id}
             onConnect={() => connect(device.id)}
           />
@@ -40,11 +73,11 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
       </div>
 
       <div className="mt-auto flex gap-6 pt-8 font-mono text-[11px] text-fg-dim">
-        <span className="flex items-center gap-1.5">
-          <Wifi size={13} /> WIRELESS
-        </span>
         <span className="flex items-center gap-1.5 opacity-50">
-          <Usb size={13} /> USB &middot; NOT CONNECTED
+          <Wifi size={13} /> WIRELESS &middot; NOT ACTIVE
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Usb size={13} /> USB &middot; ACTIVE
         </span>
       </div>
     </div>

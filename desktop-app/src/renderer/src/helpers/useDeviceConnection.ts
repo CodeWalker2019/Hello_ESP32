@@ -1,21 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
-import { CONNECT_DELAY_MS } from './constants'
+// src/renderer/helpers/useDeviceConnection.ts
+import { useState } from 'react'
 
-interface DeviceConnection {
-  connectingId: string | null
-  connect: (id: string) => void
-}
+export function useDeviceConnection(onConnected: () => void) {
+  const [connectingPath, setConnectingPath] = useState<string | null>(null)
 
-export function useDeviceConnection(onConnected: () => void): DeviceConnection {
-  const [connectingId, setConnectingId] = useState<string | null>(null)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  useEffect(() => () => clearTimeout(timeoutRef.current), [])
-
-  const connect = (id: string): void => {
-    setConnectingId(id)
-    timeoutRef.current = setTimeout(onConnected, CONNECT_DELAY_MS)
+  const connect = async (portPath: string) => {
+    setConnectingPath(portPath)
+    try {
+      // Send connection command and start reading via Electron IPC
+      window.api.connectESP32(portPath)
+      
+      // Simulate a brief handshake delay, then transition screen
+      setTimeout(() => {
+        setConnectingPath(null)
+        onConnected()
+      }, 1000)
+    } catch (err) {
+      console.error('Failed to connect to device:', err)
+      setConnectingPath(null)
+    }
   }
 
-  return { connectingId, connect }
+  return { connectingId: connectingPath, connect }
 }

@@ -31,6 +31,12 @@ void ConnectionManager::update() {
         activeTransport = readyTransport;
         notifyListeners(activeTransport);
     }
+
+    for (ITransport* transport : transportsList) {
+        if (transport != nullptr) {
+            transport->setBeaconEnabled(transport != activeTransport);
+        }
+    }
 }
 
 ITransport* ConnectionManager::listenReadyTransport() {
