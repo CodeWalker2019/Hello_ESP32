@@ -13,6 +13,7 @@ function DeviceCard({
   onConnect,
   connecting
 }: DeviceCardProps): React.JSX.Element {
+  const signalText = rssi > 0 ? `${rssi} dBm` : 'N/A'
   return (
     <button
       onClick={onConnect}
@@ -22,7 +23,7 @@ function DeviceCard({
       <div className="flex-1">
         <div className="font-display text-base tracking-[0.04em] uppercase">{codename}</div>
         <div className="mt-0.5 font-mono text-[11px] text-fg-dim">
-          {id} &middot; SIGNAL {rssi} dBm
+          {id} &middot; {signalText}
         </div>
       </div>
       {connecting ? (
