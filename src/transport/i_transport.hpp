@@ -47,6 +47,21 @@ public:
      */
     virtual bool isReady() const = 0;
 
+    /*
+     * @brief Enables or disables this transport's discovery beacon.
+     *
+     * While enabled, an implementation may periodically announce its
+     * presence (e.g. an identity packet) so a host can find it before a
+     * connection exists. ConnectionManager disables this on whichever
+     * transport is currently active, since only one connected device is
+     * supported at a time and continuing to announce would be pointless
+     * (and could interleave beacon bytes with real traffic). Implementations
+     * for which this concept doesn't apply may treat this as a no-op.
+     *
+     * @param enabled true to allow beacon announcements, false to suppress them.
+     */
+    virtual void setBeaconEnabled(bool enabled) = 0;
+
     /**
      * @brief Transmits a raw buffer of data over the transport.
      * 

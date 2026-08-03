@@ -13,6 +13,8 @@ constexpr uint32_t kHeartbeatTimeoutMs = 5000;
 constexpr uint32_t kListenerTaskStackSize = 2048;
 constexpr UBaseType_t kListenerTaskPriority = 1;
 constexpr uint8_t kHeartbeatMagic[3] = {0xAA, 0x55, 0x02};
+constexpr uint32_t kBeaconIntervalMs = 1000;
+constexpr uint8_t kIdentityBeacon[3] = {0xAA, 0x55, DEVICE_FAMILY_ID};
 
 bool readIncomingByte(uart_port_t port, uint8_t* outByte) {
 #if TELEMETRY_MODE_TEXT_DEBUG
@@ -63,6 +65,10 @@ bool UsbTransport::isReady() const {
     return heartbeat_alive;
 }
 
+void UsbTransport::setBeaconEnabled(bool enabled) {
+    beacon_enabled = enabled;
+}
+
 size_t UsbTransport::send(const uint8_t* data, size_t len) {
 #if TELEMETRY_MODE_TEXT_DEBUG
     printf("%.*s", (int)len, (const char*)data);
@@ -81,6 +87,7 @@ void UsbTransport::heartbeatListenerTask(void* arg) {
     UsbTransport* self = static_cast<UsbTransport*>(arg);
     HeartbeatMatcher matcher(kHeartbeatMagic, sizeof(kHeartbeatMagic));
     TickType_t lastSeen = xTaskGetTickCount();
+    TickType_t lastBeaconSent = xTaskGetTickCount() - pdMS_TO_TICKS(kBeaconIntervalMs);
 
     while (true) {
         uint8_t byte;
@@ -91,6 +98,12 @@ void UsbTransport::heartbeatListenerTask(void* arg) {
 
         if ((xTaskGetTickCount() - lastSeen) > pdMS_TO_TICKS(kHeartbeatTimeoutMs)) {
             self->heartbeat_alive = false;
+        }
+
+        if (self->beacon_enabled &&
+            (xTaskGetTickCount() - lastBeaconSent) >= pdMS_TO_TICKS(kBeaconIntervalMs)) {
+            self->send(kIdentityBeacon, sizeof(kIdentityBeacon));
+            lastBeaconSent = xTaskGetTickCount();
         }
     }
 }

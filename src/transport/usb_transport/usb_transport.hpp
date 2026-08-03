@@ -13,12 +13,14 @@ public:
 
     bool init() override;
     bool isReady() const override;
+    void setBeaconEnabled(bool enabled) override;
     size_t send(const uint8_t* data, size_t len) override;
 
 private:
     static constexpr uart_port_t UART_PORT = UART_NUM_0;
     bool initialized = false;
     volatile bool heartbeat_alive = false;
+    volatile bool beacon_enabled = true;
     TaskHandle_t listener_task_handle = nullptr;
 
     static void heartbeatListenerTask(void* arg);
