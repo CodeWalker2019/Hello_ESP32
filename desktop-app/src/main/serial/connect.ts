@@ -11,8 +11,8 @@ import { startHeartbeat } from './startHeartbeat'
  * packet, starts the heartbeat, and streams each incoming line back to
  * `event`'s sender as an `esp32-data` message.
  */
-export function connect(event: IpcMainEvent, portPath: string): void {
-  disconnect()
+export async function connect(event: IpcMainEvent, portPath: string): Promise<void> {
+  await disconnect()
 
   const port = new SerialPort({ path: portPath, baudRate: BAUD_RATE })
   const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }))

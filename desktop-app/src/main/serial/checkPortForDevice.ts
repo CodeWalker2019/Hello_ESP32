@@ -1,5 +1,10 @@
 import { SerialPort } from 'serialport'
-import { BAUD_RATE, HANDSHAKE_TIMEOUT_MS, TARGET_DEVICE_FAMILY_ID } from './constants'
+import {
+  BAUD_RATE,
+  HANDSHAKE_TIMEOUT_MS,
+  PORT_RELEASE_DELAY_MS,
+  TARGET_DEVICE_FAMILY_ID
+} from './constants'
 
 /**
  * Briefly opens the port at `path` and waits for the ESP32 handshake reply
@@ -29,7 +34,7 @@ export function checkPortForDevice(path: string): Promise<boolean> {
           }
           // small delay so the OS fully releases the handle before
           // any immediately-following open attempt (scan -> connect race)
-          setTimeout(() => resolve(result), 100)
+          setTimeout(() => resolve(result), PORT_RELEASE_DELAY_MS)
         })
       } else {
         resolve(result)

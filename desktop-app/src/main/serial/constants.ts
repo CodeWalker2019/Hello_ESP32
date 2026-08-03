@@ -7,5 +7,8 @@ export const BAUD_RATE = 115200
 export const HANDSHAKE_TIMEOUT_MS = 1500
 export const HEARTBEAT_INTERVAL_MS = 1000
 
+/** Buffer after closing a port before it's safe to reopen — the OS doesn't always release the lock the instant the close callback fires. */
+export const PORT_RELEASE_DELAY_MS = 100
+
 export const START_PACKET = Buffer.from([0xaa, 0x55, 0x01])
 export const HEARTBEAT_PACKET = Buffer.from([0xaa, 0x55, 0x02])

@@ -15,18 +15,14 @@ export function registerSerialConnectionHandlers(): void {
   })
 
   ipcMain.on('connect-esp32', (event, portPath: string) => {
-    try {
-      connect(event, portPath)
-    } catch (error) {
+    connect(event, portPath).catch((error) => {
       console.error(`Error connecting to ${portPath}:`, error)
-    }
+    })
   })
 
   ipcMain.on('disconnect-esp32', () => {
-    try {
-      disconnect()
-    } catch (error) {
+    disconnect().catch((error) => {
       console.error('Error disconnecting:', error)
-    }
+    })
   })
 }
