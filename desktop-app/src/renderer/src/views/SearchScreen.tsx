@@ -3,6 +3,7 @@ import { Radio, Usb, Wifi } from 'lucide-react'
 import DeviceCard from '@renderer/components/DeviceCard'
 import ScanSweep from '@renderer/components/ScanSweep'
 import { useDeviceConnection } from '@renderer/helpers/useDeviceConnection'
+import { SCAN_POLL_INTERVAL_MS } from '@renderer/helpers/constants'
 import type { ScannedDevice } from '@renderer/types'
 
 function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.Element {
@@ -10,14 +11,19 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
   const [devices, setDevices] = useState<ScannedDevice[]>([])
   const [isScanning, setIsScanning] = useState<boolean>(true)
 
-  // Scan for real ESP32 ports on component mount
+  // Scan on mount, then keep rescanning on an interval for as long as this
+  // screen stays mounted, so a device plugged in later still shows up.
   useEffect(() => {
-    async function performScan() {
-      setIsScanning(true)
+    let cancelled = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    async function performScan(isInitialScan: boolean) {
+      if (isInitialScan) setIsScanning(true)
       try {
         const foundPorts = await window.api.scanPorts()
+        if (cancelled) return
         console.log('Found ESP32 ports:', foundPorts)
-        
+
         // Map raw serial port metadata to match your ScannedDevice type structure
         const mappedDevices: ScannedDevice[] = foundPorts.map((port: any) => ({
           id: port.path,
@@ -30,11 +36,19 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
       } catch (err) {
         console.error('Error scanning for ESP32 devices:', err)
       } finally {
-        setIsScanning(false)
+        if (isInitialScan) setIsScanning(false)
+        if (!cancelled) {
+          timeoutId = setTimeout(() => performScan(false), SCAN_POLL_INTERVAL_MS)
+        }
       }
     }
 
-    performScan()
+    performScan(true)
+
+    return () => {
+      cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [])
 
   return (
