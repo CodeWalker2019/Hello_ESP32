@@ -1,23 +1,23 @@
 import type { IpcMainEvent } from 'electron'
 import { SerialPort } from 'serialport'
-import { ReadlineParser } from '@serialport/parser-readline'
 import { serialState } from './state'
 import { BAUD_RATE, START_PACKET } from './constants'
 import { disconnect } from './disconnect'
 import { startHeartbeat } from './startHeartbeat'
+import { TelemetryParser } from './telemetryParser'
 
 /**
  * Tears down any prior connection, opens `portPath`, sends the start
- * packet, starts the heartbeat, and streams each incoming line back to
- * `event`'s sender as an `esp32-data` message.
+ * packet, starts the heartbeat, and streams each decoded telemetry packet
+ * back to `event`'s sender as an `esp32-telemetry` message.
  */
 export async function connect(event: IpcMainEvent, portPath: string): Promise<void> {
   await disconnect()
 
   const port = new SerialPort({ path: portPath, baudRate: BAUD_RATE })
-  const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }))
   serialState.port = port
-  serialState.parser = parser
+
+  const telemetryParser = new TelemetryParser()
 
   port.on('open', () => {
     console.log(`Connected to target ESP32 on ${portPath}`)
@@ -29,8 +29,10 @@ export async function connect(event: IpcMainEvent, portPath: string): Promise<vo
     startHeartbeat()
   })
 
-  parser.on('data', (data: string) => {
-    event.sender.send('esp32-data', data)
+  port.on('data', (chunk: Buffer) => {
+    for (const reading of telemetryParser.push(chunk)) {
+      event.sender.send('esp32-telemetry', reading)
+    }
   })
 
   port.on('error', (err) => {

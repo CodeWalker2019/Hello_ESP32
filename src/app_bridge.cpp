@@ -26,6 +26,15 @@ extern "C" void app_bridge_init(void) {
     else ESP_LOGE("AppBridge", "Cannot start telemetry task, sensorQueue is null");
 
     connectionManager.addOnTransportChangeListener([](ITransport* transport) {
+        if (transport != nullptr) {
+            transportManager.setActiveTransport(transport);
+            return;
+        } 
+
+        transportManager.resetActiveTransport();
+    });
+
+    connectionManager.addOnTransportChangeListener([](ITransport* transport) {
         led_status_set(transport != nullptr ? LED_STATE_CONNECTED : LED_STATE_SEARCH);
     });
 }

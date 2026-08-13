@@ -4,25 +4,56 @@ import { useCubeRotation } from '@renderer/helpers/useCubeRotation'
 
 const FACE_TRANSFORMS = getCubeFaceTransforms(CUBE_SIZE)
 
-function Cube3D(): React.JSX.Element {
-  const rotation = useCubeRotation({ x: -22, y: 35 }, CUBE_ROTATION_SPEED)
+const FACE_LABELS = ['+X FRONT', '-X BACK', '+Y RIGHT', '-Y LEFT', '+Z TOP', '-Z BTM']
+
+interface Cube3DProps {
+  pitch?: number
+  roll?: number
+  yaw?: number
+}
+
+function Cube3D({ pitch, roll, yaw = 0 }: Cube3DProps): React.JSX.Element {
+  const defaultRotation = useCubeRotation({ x: -22, y: 35 }, CUBE_ROTATION_SPEED)
+
+  const isLive = pitch !== undefined && roll !== undefined
+
+  // Base 3/4 elevated view (-22° pitch, 35° yaw)
+  const baseAngleX = -22
+  const baseAngleY = 35
+
+  const rotX = isLive ? baseAngleX - pitch : defaultRotation.x
+  const rotY = isLive ? baseAngleY + yaw : defaultRotation.y
+  const rotZ = isLive ? -roll : 0
 
   return (
-    <div className="flex h-full w-full items-center justify-center [perspective:900px]">
+    <div className="relative flex h-full w-full items-center justify-center perspective-[600px] perspective-origin-[50%_35%] overflow-hidden">
+      {/* Ground Projection Shadow */}
       <div
-        className="relative [transform-style:preserve-3d]"
+        className="absolute h-44 w-44 rounded-full bg-amber/15 blur-2xl pointer-events-none"
+        style={{
+          transform: 'translateY(95px) rotateX(75deg) scale(1.3)'
+        }}
+      />
+
+      {/* 3D Cube Model */}
+      <div
+        className={`relative transform-3d ${isLive ? '' : 'transition-transform duration-75 ease-out'}`}
         style={{
           width: CUBE_SIZE,
           height: CUBE_SIZE,
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`
+          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`
         }}
       >
         {FACE_TRANSFORMS.map((transform, i) => (
           <div
             key={i}
-            className="absolute border border-amber bg-gradient-to-br from-amber/10 to-transparent"
+            className="absolute flex items-center justify-center border border-amber/70 bg-linear-to-br from-amber/20 via-amber/5 to-transparent shadow-[inset_0_0_15px_rgba(245,158,11,0.15)]"
             style={{ width: CUBE_SIZE, height: CUBE_SIZE, transform }}
-          />
+          >
+            <span className="font-mono text-[9px] font-semibold tracking-widest text-amber/80 select-none">
+              {FACE_LABELS[i]}
+            </span>
+          </div>
         ))}
       </div>
     </div>

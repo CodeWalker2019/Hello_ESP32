@@ -14,10 +14,6 @@ void TransportManager::resetActiveTransport() {
 }
 
 void TransportManager::sendTelemetry(const uint8_t* data, size_t len) {
-    if (activeTransport == nullptr) {
-      ESP_LOGE("TransportManager", "send telemtry failed; activeTransport is not assigned");
-      return;
-    }
-
+    if (activeTransport == nullptr) return;
     activeTransport -> send(data, len);
 }
