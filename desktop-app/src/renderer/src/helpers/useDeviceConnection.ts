@@ -1,16 +1,17 @@
-// src/renderer/helpers/useDeviceConnection.ts
 import { useState } from 'react'
 
-export function useDeviceConnection(onConnected: () => void) {
+export interface IUseDeviceConnectionReturnType {
+  connect: (portPath: string) => Promise<void>
+  connectingId: string | null
+}
+
+export function useDeviceConnection(onConnected: () => void): IUseDeviceConnectionReturnType {
   const [connectingPath, setConnectingPath] = useState<string | null>(null)
 
-  const connect = async (portPath: string) => {
+  const connect = async (portPath: string): Promise<void> => {
     setConnectingPath(portPath)
     try {
-      // Send connection command and start reading via Electron IPC
       window.api.connectESP32(portPath)
-      
-      // Simulate a brief handshake delay, then transition screen
       setTimeout(() => {
         setConnectingPath(null)
         onConnected()

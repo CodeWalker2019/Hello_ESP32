@@ -1,31 +1,30 @@
-import { useState, useEffect } from 'react'
-import { Radio, Usb, Wifi } from 'lucide-react'
 import DeviceCard from '@renderer/components/DeviceCard'
 import ScanSweep from '@renderer/components/ScanSweep'
-import { useDeviceConnection } from '@renderer/helpers/useDeviceConnection'
 import { SCAN_POLL_INTERVAL_MS } from '@renderer/helpers/constants'
+import { IUseDeviceConnectionReturnType } from '@renderer/helpers/useDeviceConnection'
 import type { ScannedDevice } from '@renderer/types'
+import { Radio, Usb, Wifi } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.Element {
-  const { connectingId, connect } = useDeviceConnection(onConnected)
+function SearchScreen({
+  connectingId,
+  connect
+}: IUseDeviceConnectionReturnType): React.JSX.Element {
   const [devices, setDevices] = useState<ScannedDevice[]>([])
   const [isScanning, setIsScanning] = useState<boolean>(true)
 
-  // Scan on mount, then keep rescanning on an interval for as long as this
-  // screen stays mounted, so a device plugged in later still shows up.
   useEffect(() => {
     let cancelled = false
     let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-    async function performScan(isInitialScan: boolean) {
+    async function performScan(isInitialScan: boolean): Promise<void> {
       if (isInitialScan) setIsScanning(true)
       try {
         const foundPorts = await window.api.scanPorts()
         if (cancelled) return
         console.log('Found ESP32 ports:', foundPorts)
 
-        // Map raw serial port metadata to match your ScannedDevice type structure
-        const mappedDevices: ScannedDevice[] = foundPorts.map((port: any) => ({
+        const mappedDevices: ScannedDevice[] = foundPorts.map((port) => ({
           id: port.path,
           codename: `Kestrel-${port.path.split('/').pop()}`,
           rssi: 0,
@@ -51,6 +50,12 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
     }
   }, [])
 
+  function getScanCurrentStateLabel(): string {
+    if (isScanning) return 'Searching for beacon...'
+    if (devices.length > 0) return 'Devices Found'
+    return 'No Devices Found'
+  }
+
   return (
     <div className="flex h-full flex-col items-center px-8 py-12">
       <div className="mb-1.5 flex items-center gap-2.5 self-start">
@@ -60,12 +65,12 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
         </span>
       </div>
       <h1 className="mt-1 mb-8 self-start font-display text-3xl font-medium tracking-[0.02em] uppercase">
-        {isScanning ? 'Searching for beacon...' : devices.length > 0 ? 'Devices Found' : 'No Devices Found'}
+        {getScanCurrentStateLabel()}
       </h1>
 
       <ScanSweep />
 
-      <div className="my-7 font-mono text-xs tracking-[0.05em] text-fg-dim">
+      <div className="my-7 font-mono text-xs tracking-wider text-fg-dim">
         {isScanning ? (
           <span className="text-amber">SCANNING SERIAL PORTS...</span>
         ) : (
@@ -73,7 +78,7 @@ function SearchScreen({ onConnected }: { onConnected: () => void }): React.JSX.E
         )}
       </div>
 
-      <div className="flex w-full max-w-[420px] flex-col gap-2.5">
+      <div className="flex w-full max-w-105 flex-col gap-2.5">
         {devices.map((device) => (
           <DeviceCard
             key={device.id}

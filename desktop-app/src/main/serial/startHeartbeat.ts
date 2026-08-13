@@ -1,5 +1,6 @@
-import { serialState } from './state'
 import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_PACKET } from './constants'
+import { serialState } from './state'
+import { disconnect } from './disconnect'
 import { stopHeartbeat } from './stopHeartbeat'
 
 /**
@@ -10,10 +11,22 @@ import { stopHeartbeat } from './stopHeartbeat'
 export function startHeartbeat(): void {
   stopHeartbeat()
   serialState.heartbeatInterval = setInterval(() => {
-    if (serialState.port && serialState.port.isOpen) {
-      serialState.port.write(HEARTBEAT_PACKET, (err) => {
-        if (err) console.error('Failed to write heartbeat:', err)
-      })
+    if (!serialState.port) {
+      console.error("SerialPort doesn't exist.. Disconnecting")
     }
+
+    if (serialState.port && !serialState.port.isOpen) {
+      console.error('SerialPort is closed.. Disconnecting.', serialState.port.path)
+    }
+
+    if (!serialState.port?.isOpen) {
+      disconnect()
+      return
+    }
+
+    serialState.port.write(HEARTBEAT_PACKET, (err) => {
+      if (err) console.error('Failed to write heartbeat:', err)
+      else console.log('Heartbit data is sent', HEARTBEAT_PACKET)
+    })
   }, HEARTBEAT_INTERVAL_MS)
 }

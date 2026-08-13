@@ -35,5 +35,15 @@ export async function connect(event: IpcMainEvent, portPath: string): Promise<vo
 
   port.on('error', (err) => {
     console.error('Serial Port Error:', err.message)
+    disconnect().catch((error) => {
+      console.error('Error disconnecting after port error:', error)
+    })
+  })
+
+  port.on('close', () => {
+    console.log('Serial port closed.')
+    disconnect().catch((error) => {
+      console.error('Error disconnecting after port close:', error)
+    })
   })
 }
