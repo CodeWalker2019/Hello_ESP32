@@ -11,6 +11,7 @@ static ConnectionManager connectionManager({&usbTransport, nullptr});
 
 extern "C" void app_bridge_init(void) {
     led_status_init();
+
     connectionManager.init();
 
     connectionManager.addOnTransportChangeListener([](ITransport* transport) {
