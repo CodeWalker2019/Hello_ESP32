@@ -5,6 +5,7 @@
 #include <array>
 #include <vector>
 #include <functional>
+#include <mutex>
 
 constexpr size_t kTransportCount = 2;
 
@@ -16,14 +17,16 @@ public:
 
     void init();
     void addOnTransportChangeListener(TransportChangeCallback callback);
-    void update();
 
 private:
+    std::mutex mutex_;
     ITransport* activeTransport = nullptr;
     std::array<ITransport*, kTransportCount> transportsList{};
     std::vector<TransportChangeCallback> onTransportChangeListeners;
 
-    ITransport* listenReadyTransport();
+    void handleTransportStateChange(ITransport* transport, bool isReady);
+    void evaluateActiveTransport();
+    ITransport* selectReadyTransport();
     void notifyListeners(ITransport* transport);
 };
 

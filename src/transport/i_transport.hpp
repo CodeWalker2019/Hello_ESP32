@@ -12,9 +12,12 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <functional>
 
 class ITransport {
 public:
+    using StateChangeCallback = std::function<void(ITransport* transport, bool isReady)>;
+
     /**
      * @brief Virtual destructor.
      * 
@@ -34,6 +37,14 @@ public:
      * @return true if initialization succeeded, false otherwise.
      */
     virtual bool init() = 0;
+
+    /**
+     * @brief Registers a callback to be invoked when the transport ready state changes.
+     * 
+     * @param callback Function called on connection/disconnection events.
+     */
+    virtual void setOnStateChangeListener(StateChangeCallback callback) = 0;
+
 
     /**
      * @brief Checks whether this transport currently has a live, working connection.

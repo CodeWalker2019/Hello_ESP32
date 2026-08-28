@@ -6,18 +6,19 @@ TransportManager::TransportManager() {}
 TransportManager::~TransportManager() {}
 
 void TransportManager::setActiveTransport(ITransport* transport) {
-    activeTransport = transport;
+    activeTransport.store(transport);
 }
 
 void TransportManager::resetActiveTransport() {
-    activeTransport = nullptr;
+    activeTransport.store(nullptr);
 }
 
 void TransportManager::sendTelemetry(const uint8_t* data, size_t len) {
-    if (activeTransport == nullptr) {
-      ESP_LOGE("TransportManager", "send telemtry failed; activeTransport is not assigned");
+    ITransport* transport = activeTransport.load();
+    if (transport == nullptr) {
+      ESP_LOGE("TransportManager", "send telemetry failed; activeTransport is not assigned");
       return;
     }
 
-    activeTransport -> send(data, len);
+    transport->send(data, len);
 }

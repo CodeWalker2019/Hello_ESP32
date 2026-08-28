@@ -61,12 +61,22 @@ bool UsbTransport::init() {
     return initialized;
 }
 
+void UsbTransport::setOnStateChangeListener(StateChangeCallback callback) {
+    state_change_callback = std::move(callback);
+}
+
+void UsbTransport::notifyStateChange(bool ready) {
+    if (state_change_callback) {
+        state_change_callback(this, ready);
+    }
+}
+
 bool UsbTransport::isReady() const {
-    return heartbeat_alive;
+    return heartbeat_alive.load();
 }
 
 void UsbTransport::setBeaconEnabled(bool enabled) {
-    beacon_enabled = enabled;
+    beacon_enabled.store(enabled);
 }
 
 size_t UsbTransport::send(const uint8_t* data, size_t len) {
@@ -92,15 +102,19 @@ void UsbTransport::heartbeatListenerTask(void* arg) {
     while (true) {
         uint8_t byte;
         if (readIncomingByte(UART_PORT, &byte) && matcher.feed(byte)) {
-            self->heartbeat_alive = true;
             lastSeen = xTaskGetTickCount();
+            if (!self->heartbeat_alive.exchange(true)) {
+                self->notifyStateChange(true);
+            }
         }
 
-        if ((xTaskGetTickCount() - lastSeen) > pdMS_TO_TICKS(kHeartbeatTimeoutMs)) {
-            self->heartbeat_alive = false;
+        if (self->heartbeat_alive.load() &&
+            (xTaskGetTickCount() - lastSeen) > pdMS_TO_TICKS(kHeartbeatTimeoutMs)) {
+            self->heartbeat_alive.store(false);
+            self->notifyStateChange(false);
         }
 
-        if (self->beacon_enabled &&
+        if (self->beacon_enabled.load() &&
             (xTaskGetTickCount() - lastBeaconSent) >= pdMS_TO_TICKS(kBeaconIntervalMs)) {
             self->send(kIdentityBeacon, sizeof(kIdentityBeacon));
             lastBeaconSent = xTaskGetTickCount();

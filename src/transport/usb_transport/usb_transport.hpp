@@ -5,6 +5,7 @@
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <atomic>
 
 class UsbTransport : public ITransport {
 public:
@@ -12,6 +13,7 @@ public:
     ~UsbTransport() override;
 
     bool init() override;
+    void setOnStateChangeListener(StateChangeCallback callback) override;
     bool isReady() const override;
     void setBeaconEnabled(bool enabled) override;
     size_t send(const uint8_t* data, size_t len) override;
@@ -19,10 +21,12 @@ public:
 private:
     static constexpr uart_port_t UART_PORT = UART_NUM_0;
     bool initialized = false;
-    volatile bool heartbeat_alive = false;
-    volatile bool beacon_enabled = true;
+    std::atomic<bool> heartbeat_alive{false};
+    std::atomic<bool> beacon_enabled{true};
+    StateChangeCallback state_change_callback;
     TaskHandle_t listener_task_handle = nullptr;
 
+    void notifyStateChange(bool ready);
     static void heartbeatListenerTask(void* arg);
 };
 

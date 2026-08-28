@@ -1,0 +1,13 @@
+CompileFlags:
+  Add: [-std=gnu++17, -xc++]
+  Remove:
+    - -mlongcalls
+    - -fno-shrink-wrap
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fzero-init-padding-bits=all
+    - -fzero-init-builtins-bits=all
+    - -fno-malloc-dce
+    - -mtext-section-literals
+    - -fno-jump-tables
+    - -fno-tree-sroa

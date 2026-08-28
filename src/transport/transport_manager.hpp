@@ -2,6 +2,7 @@
 #define TRANSPORT_MANAGER_HPP
 
 #include <array>
+#include <atomic>
 #include "transport/i_transport.hpp"
 
 class TransportManager {
@@ -14,7 +15,7 @@ public:
     void sendTelemetry(const uint8_t* data, size_t len);
 
 private:
-    ITransport* activeTransport = nullptr;
+    std::atomic<ITransport*> activeTransport{nullptr};
 };
 
 #endif // TRANSPORT_MANAGER_HPP

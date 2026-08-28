@@ -12,3 +12,9 @@ export const PORT_RELEASE_DELAY_MS = 100
 
 export const START_PACKET = Buffer.from([0xaa, 0x55, 0x01])
 export const HEARTBEAT_PACKET = Buffer.from([0xaa, 0x55, 0x02])
+
+/** Magic prefix for a telemetry packet: 0xAA 0x55 <device family id>. */
+export const TELEMETRY_MAGIC = Buffer.from([0xaa, 0x55, TARGET_DEVICE_FAMILY_ID])
+
+/** Magic (3) + accel_x/accel_y/accel_z as big-endian int16 (6). */
+export const TELEMETRY_PACKET_LENGTH = 9

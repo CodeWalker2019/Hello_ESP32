@@ -7,14 +7,20 @@ ConnectionManager::ConnectionManager(std::array<ITransport*, kTransportCount> tr
     : transportsList(transports) {}
 
 void ConnectionManager::init() {
+    std::lock_guard<std::mutex> lock(mutex_);
     for (ITransport* transport : transportsList) {
         if (transport != nullptr) {
+            transport->setOnStateChangeListener([this](ITransport* t, bool ready) {
+                this->handleTransportStateChange(t, ready);
+            });
             transport->init();
         }
     }
+    evaluateActiveTransport();
 }
 
 void ConnectionManager::addOnTransportChangeListener(TransportChangeCallback callback) {
+    std::lock_guard<std::mutex> lock(mutex_);
     onTransportChangeListeners.push_back(callback);
 }
 
@@ -24,8 +30,14 @@ void ConnectionManager::notifyListeners(ITransport* transport) {
     }
 }
 
-void ConnectionManager::update() {
-    ITransport* readyTransport = listenReadyTransport();
+void ConnectionManager::handleTransportStateChange(ITransport* transport, bool isReady) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ESP_LOGI(TAG, "Transport state changed (isReady: %d)", isReady);
+    evaluateActiveTransport();
+}
+
+void ConnectionManager::evaluateActiveTransport() {
+    ITransport* readyTransport = selectReadyTransport();
 
     if (readyTransport != activeTransport) {
         activeTransport = readyTransport;
@@ -39,7 +51,7 @@ void ConnectionManager::update() {
     }
 }
 
-ITransport* ConnectionManager::listenReadyTransport() {
+ITransport* ConnectionManager::selectReadyTransport() {
     if (activeTransport != nullptr && activeTransport->isReady()) {
         return activeTransport;
     }
@@ -52,3 +64,4 @@ ITransport* ConnectionManager::listenReadyTransport() {
 
     return nullptr;
 }
+

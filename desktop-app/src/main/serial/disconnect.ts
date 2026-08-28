@@ -15,7 +15,6 @@ export function disconnect(): Promise<void> {
   return new Promise((resolve) => {
     const finish = (): void => {
       serialState.port = null
-      serialState.parser = null
       resolve()
     }
 
