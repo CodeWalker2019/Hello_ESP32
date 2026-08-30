@@ -1,0 +1,1 @@
+// TODO: Implement the Wi-Fi transport layer for the ESP32 platform. This will involve setting up the Wi-Fi connection, handling data transmission and reception, and ensuring reliable communication with the application layer.
