@@ -1,14 +1,13 @@
-#ifndef APP_BRIDGE_HPP
-#define APP_BRIDGE_HPP
+#pragma once
+
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void app_bridge_init(void);
+esp_err_t system_orchestrator_init(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

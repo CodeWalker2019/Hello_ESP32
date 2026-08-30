@@ -13,7 +13,7 @@ static UsbTransport usbTransport;
 static TransportManager transportManager;
 static ConnectionManager connectionManager({&usbTransport, nullptr});
 
-extern "C" void app_bridge_init(void) {
+extern "C" esp_err_t system_orchestrator_init(void) {
     led_status_init();
 
     motion_sensor_init();
@@ -37,5 +37,5 @@ extern "C" void app_bridge_init(void) {
         led_status_set(transport != nullptr ? LED_STATE_CONNECTED : LED_STATE_SEARCH);
     });
 
-    connectionManager.init();
+    return ESP_OK;
 }
