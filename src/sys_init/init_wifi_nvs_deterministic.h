@@ -1,9 +1,11 @@
 #pragma once
 
 #include "esp_err.h"
+#include "nvs_flash.h"
 
-#define WIFI_NVS_PARTITION_NAME     "nvs_wifi"
+#define WIFI_NVS_PARTITION_NAME     NVS_DEFAULT_PART_NAME
 #define WIFI_NVS_LOGS_TAG           "NVS_WIFI_INIT"
+
 
 #ifdef __cplusplus
 extern "C" {

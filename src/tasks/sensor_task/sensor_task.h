@@ -1,9 +1,11 @@
 #ifndef SENSOR_TASK_H
 #define SENSOR_TASK_H
 
+#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-QueueHandle_t sensor_task_start(void);
+esp_err_t sensor_task_start(QueueHandle_t queue);
 
 #endif
+

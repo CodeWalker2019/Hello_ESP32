@@ -1,4 +1,0 @@
-# Name,        Type,    SubType,    Offset,     Size,   Flags
-
-# Dedicated NVS partition ONLY for Wi-Fi stack blobs
-nvs_wifi,      data,    nvs,        0x9000,     0x4000,
