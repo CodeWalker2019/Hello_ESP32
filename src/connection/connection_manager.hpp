@@ -2,33 +2,28 @@
 #define CONNECTION_MANAGER_HPP
 
 #include "transport/i_transport.hpp"
-#include <array>
 #include <vector>
 #include <functional>
 #include <mutex>
 
-// TODO: Consider making kTransportCount a template parameter or a configurable constant to allow for flexibility in the number of transports supported by the ConnectionManager.
-constexpr size_t kTransportCount = 1;
-
 class ConnectionManager {
 public:
     using TransportChangeCallback = std::function<void(ITransport*)>;
-
-    explicit ConnectionManager(std::array<ITransport*, kTransportCount> transports);
+    explicit ConnectionManager(std::vector<ITransport*> transports);
 
     void init();
+    void update();
     void addOnTransportChangeListener(TransportChangeCallback callback);
 
 private:
     std::mutex mutex_;
     ITransport* activeTransport = nullptr;
-    std::array<ITransport*, kTransportCount> transportsList{};
+    std::vector<ITransport*> transportsList;
     std::vector<TransportChangeCallback> onTransportChangeListeners;
 
-    void handleTransportStateChange(ITransport* transport, bool isReady);
     void evaluateActiveTransport();
     ITransport* selectReadyTransport();
     void notifyListeners(ITransport* transport);
 };
 
-#endif
+#endif // CONNECTION_MANAGER_HPP
