@@ -45,16 +45,17 @@ bool UsbTransport::init() {
 #if TELEMETRY_MODE_TEXT_DEBUG
     initialized = true;
 #else
-    uart_config_t config = {
-        .baud_rate = BAUD_RATE,
-        .data_bits = UART_DATA_8_BITS,
-        .parity    = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-    };
+    uart_config_t config = {};
+    config.baud_rate = BAUD_RATE;
+    config.data_bits = UART_DATA_8_BITS;
+    config.parity    = UART_PARITY_DISABLE;
+    config.stop_bits = UART_STOP_BITS_1;
+    config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+    config.source_clk = UART_SCLK_DEFAULT;
     if (uart_param_config(UART_PORT, &config) != ESP_OK) return false;
     if (uart_driver_install(UART_PORT, 1024, 1024, 0, NULL, 0) != ESP_OK) return false;
     initialized = true;
+
 #endif
     xTaskCreate(heartbeatListenerTask, "usb_heartbeat", kListenerTaskStackSize, this,
                 kListenerTaskPriority, &listener_task_handle);

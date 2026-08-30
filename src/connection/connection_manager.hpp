@@ -7,7 +7,8 @@
 #include <functional>
 #include <mutex>
 
-constexpr size_t kTransportCount = 2;
+// TODO: Consider making kTransportCount a template parameter or a configurable constant to allow for flexibility in the number of transports supported by the ConnectionManager.
+constexpr size_t kTransportCount = 1;
 
 class ConnectionManager {
 public:

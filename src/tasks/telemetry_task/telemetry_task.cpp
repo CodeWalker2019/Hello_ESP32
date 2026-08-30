@@ -56,13 +56,15 @@ void telemetryTask(void* arg) {
 }
 }
 
-void telemetry_task_start(QueueHandle_t queue, TransportManager& transportManager) {
+esp_err_t telemetry_task_start(QueueHandle_t queue, TransportManager& transportManager) {
     if (queue == nullptr) {
         ESP_LOGE("TelemetryTask", "telemetry_task_start called with null queue");
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
     static TelemetryTaskArgs args;
     args.queue = queue;
     args.transportManager = &transportManager;
-    xTaskCreate(telemetryTask, "telemetry_task", kTelemetryTaskStackSize, &args, kTelemetryTaskPriority, nullptr);
+    BaseType_t res = xTaskCreate(telemetryTask, "telemetry_task", kTelemetryTaskStackSize, &args, kTelemetryTaskPriority, nullptr);
+    return (res == pdPASS) ? ESP_OK : ESP_FAIL;
 }
+
