@@ -28,7 +28,7 @@ bool readIncomingByte(uart_port_t port, uint8_t* outByte) {
 #endif
 }
 
-}  // namespace
+}
 
 UsbTransport::UsbTransport() {}
 

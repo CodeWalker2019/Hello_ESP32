@@ -7,14 +7,16 @@
 #include "connection/connection_manager.hpp"
 #include "transport/transport_manager.hpp"
 #include "transport/usb_transport/usb_transport.hpp"
+#include "transport/wifi_transport/wifi_transport.hpp"
 #include "esp_check.h"
 #include "esp_log.h"
 
 #define SENSOR_QUEUE_LENGTH 10
 
 static UsbTransport usbTransport;
+static WifiTransport wifiTransport;
 static TransportManager transportManager;
-static ConnectionManager connectionManager({ &usbTransport });
+static ConnectionManager connectionManager({ &usbTransport, &wifiTransport });
 
 extern "C" esp_err_t system_orchestrator_init(void) {
     QueueHandle_t sensorQueue = xQueueCreate(SENSOR_QUEUE_LENGTH, sizeof(motion_sensor_reading_t));
