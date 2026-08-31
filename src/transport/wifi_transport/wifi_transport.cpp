@@ -1,67 +1,93 @@
 #include "transport/wifi_transport/wifi_transport.hpp"
 #include <esp_log.h>
+#include <cstdio>
+#include "app_config.h"
 
-EventGroupHandle_t WifiTransport::s_wifi_event_group = nullptr;
+static const char* TAG = "WifiTransport";
 
-WifiTransport::WifiTransport()
-    : sta_netif(nullptr),
-      cfg(WIFI_INIT_CONFIG_DEFAULT()) {
-    if (s_wifi_event_group == nullptr) {
-        s_wifi_event_group = xEventGroupCreate();
-    }
-}
+WifiTransport::WifiTransport() = default;
 
-WifiTransport::~WifiTransport() {}
+WifiTransport::~WifiTransport() = default;
 
 bool WifiTransport::init() {
-    sta_netif = esp_netif_create_default_wifi_sta();
-    if (sta_netif == nullptr) {
-        ESP_LOGE(WIFI_TRANSPORT_LOGS, "Failed to create default STA netif");
+    if (!netifManager.init()) {
+        ESP_LOGE(TAG, "Failed to initialize NetifManager");
         return false;
     }
 
-    if (esp_wifi_init(&cfg) != ESP_OK) return false;
+    if (!netifManager.startApStaMode(CONFIG_DEFAULT_SOFTAP_SSID)) {
+        ESP_LOGE(TAG, "Failed to start APSTA mode");
+        return false;
+    }
 
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, this);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, this);
+    netifManager.setOnConnectionStatusChanged([this](bool isConnected) {
+        handleConnectionStatusChanged(isConnected);
+    });
 
-    if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) return false;
-    if (esp_wifi_start() != ESP_OK) return false;
+    touchHandler.setOnCredentialsReceived([this](const wifi_config_t& wifi_cfg) {
+        handleCredentialsReceived(wifi_cfg);
+    });
 
+    tcpServer.setOnClientStateChanged([this](bool isConnected) {
+        handleClientStateChanged(isConnected);
+    });
+
+    if (touchHandler.start() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start WifiTouch sniffer");
+        return false;
+    }
+
+    if (!tcpServer.start(8080)) {
+        ESP_LOGE(TAG, "Failed to start TCP server");
+        return false;
+    }
+
+    ESP_LOGI(TAG, "WifiTransport successfully initialized");
     return true;
 }
 
 bool WifiTransport::isReady() const {
-    // TODO: Check event group bits or socket connectivity
-    // TODO: Implement based on IP / TCP connection state
-    return false;
+    return tcpServer.isConnected();
 }
 
 void WifiTransport::setBeaconEnabled(bool enabled) {
-    // TODO: Enable/disable smartconfig or advertising if inactive
+    netifManager.setBeaconEnabled(enabled);
 }
 
 size_t WifiTransport::send(const uint8_t* data, size_t len) {
-    if (!isReady()) return 0;
-    // TODO: Transmit over socket...
-    return len;
+    return tcpServer.sendData(data, len);
 }
 
 void WifiTransport::setOnStateChangeListener(StateChangeCallback callback) {
     stateChangeCallback = callback;
 }
 
-void WifiTransport::event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    auto* self = static_cast<WifiTransport*>(arg);
+void WifiTransport::handleCredentialsReceived(const wifi_config_t& wifi_cfg) {
+    ESP_LOGI(TAG, "Credentials received for SSID: %s, connecting...", wifi_cfg.sta.ssid);
+    netifManager.connectStation(wifi_cfg);
+}
+
+void WifiTransport::handleConnectionStatusChanged(bool isConnected) {
+    if (isConnected) {
+        ESP_LOGI(TAG, "Station acquired IP address. Sending ESPTouch ACK confirmation...");
+        touchHandler.sendAck();
+    } else {
+        ESP_LOGW(TAG, "Station interface disconnected");
+    }
+}
+
+void WifiTransport::handleClientStateChanged(bool isConnected) {
+    if (isConnected) {
+        ESP_LOGI(TAG, "Desktop TCP client connected. Telemetry streaming ready.");
+    }
     
-    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ESP_LOGI(WIFI_TRANSPORT_LOGS, "Wi-Fi got IP!");
-        self->stateChangeCallback(self, true);
-        return;
-    } 
-    
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGW(WIFI_TRANSPORT_LOGS, "Wi-Fi disconnected");
-        self->stateChangeCallback(self, false);
+    if (!isConnected) {
+        ESP_LOGW(TAG, "Desktop TCP client disconnected. Resetting transport state to idle...");
+        netifManager.disconnectStation();
+        touchHandler.start();
+    }
+
+    if (stateChangeCallback) {
+        stateChangeCallback(this, isConnected);
     }
 }
