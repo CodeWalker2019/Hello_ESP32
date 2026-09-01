@@ -1,19 +1,26 @@
-// src/renderer/helpers/useDeviceConnection.ts
 import { useState } from 'react'
+import type { DeviceType } from '@renderer/types'
 
-export function useDeviceConnection(onConnected: () => void) {
+export interface DeviceConnectionHook {
+  connectingId: string | null
+  connect: (id: string, type: DeviceType) => Promise<void>
+}
+
+export function useDeviceConnection(onConnected: (type: DeviceType) => void): DeviceConnectionHook {
   const [connectingPath, setConnectingPath] = useState<string | null>(null)
 
-  const connect = async (portPath: string) => {
-    setConnectingPath(portPath)
+  const connect = async (id: string, type: DeviceType): Promise<void> => {
+    setConnectingPath(id)
     try {
-      // Send connection command and start reading via Electron IPC
-      window.api.connectESP32(portPath)
-      
-      // Simulate a brief handshake delay, then transition screen
-      setTimeout(() => {
+      if (type === 'wifi') {
+        window.api.connectESP32Wifi(id)
+      } else {
+        window.api.connectESP32(id)
+      }
+
+      setTimeout((): void => {
         setConnectingPath(null)
-        onConnected()
+        onConnected(type)
       }, 1000)
     } catch (err) {
       console.error('Failed to connect to device:', err)

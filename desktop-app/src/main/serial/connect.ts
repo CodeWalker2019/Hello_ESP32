@@ -5,14 +5,10 @@ import { BAUD_RATE, START_PACKET } from './constants'
 import { disconnect } from './disconnect'
 import { startHeartbeat } from './startHeartbeat'
 import { TelemetryParser } from './telemetryParser'
+import { disconnectWifi } from '../wifiConnection/disconnect'
 
-/**
- * Tears down any prior connection, opens `portPath`, sends the start
- * packet, starts the heartbeat, and streams each decoded telemetry packet
- * back to `event`'s sender as an `esp32-telemetry` message.
- */
 export async function connect(event: IpcMainEvent, portPath: string): Promise<void> {
-  await disconnect()
+  await Promise.all([disconnect(), disconnectWifi()])
 
   const port = new SerialPort({ path: portPath, baudRate: BAUD_RATE })
   serialState.port = port

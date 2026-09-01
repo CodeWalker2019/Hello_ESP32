@@ -1,19 +1,24 @@
 import { SerialPort } from 'serialport'
-import { ESP32_VENDOR_ID } from './constants'
 import { checkPortForDevice } from './checkPortForDevice'
 import { serialState } from './state'
 import type { PortInfo } from './types'
 
-/**
- * Lists all serial ports, narrows to the expected vendor ID, then confirms
- * each candidate with a handshake check. Ports that are busy or error out
- * during the check are silently skipped rather than failing the scan. The
- * currently connected port, if any, is trusted without a re-check — probing
- * it would always fail with EBUSY since this process already holds it open.
- */
+const ESP32_VENDOR_IDS = ['10c4', '0403', '303a', '1a86']
+
 export async function scanPorts(): Promise<PortInfo[]> {
   const availablePorts = await SerialPort.list()
-  const candidatePorts = availablePorts.filter((p) => p.vendorId === ESP32_VENDOR_ID)
+
+  const candidatePorts = availablePorts.filter((p) => {
+    const vendorId = p.vendorId?.toLowerCase()
+    const matchesVendor = vendorId ? ESP32_VENDOR_IDS.includes(vendorId) : false
+    const matchesPath =
+      p.path.includes('tty.usbserial') ||
+      p.path.includes('tty.usbmodem') ||
+      p.path.includes('cu.usbserial')
+
+    return matchesVendor || matchesPath
+  })
+
   const matchedPorts: PortInfo[] = []
 
   for (const portInfo of candidatePorts) {
@@ -22,14 +27,8 @@ export async function scanPorts(): Promise<PortInfo[]> {
       continue
     }
 
-    try {
-      const isMatch = await checkPortForDevice(portInfo.path)
-      if (isMatch) {
-        matchedPorts.push(portInfo)
-      }
-    } catch {
-      // Skip busy or problematic ports
-    }
+    const isMatch = await checkPortForDevice(portInfo.path)
+    if (isMatch) matchedPorts.push(portInfo)
   }
 
   return matchedPorts

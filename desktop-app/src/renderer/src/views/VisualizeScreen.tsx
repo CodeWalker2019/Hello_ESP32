@@ -1,82 +1,32 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Usb, Wifi } from 'lucide-react'
 import Cube3D from '@renderer/components/Cube3D'
 import Readout from '@renderer/components/Readout'
-import { useEffect, useRef, useState } from 'react'
-import type { TelemetryReading } from '../../../main/serial/types'
+import { useSmoothedTelemetry } from '@renderer/helpers/useSmoothedTelemetry'
+import { computeOrientation, countsToG } from '@renderer/helpers/telemetryMath'
+import type { DeviceType } from '@renderer/types'
 
-const LSB_PER_G = 16384.0
-const LERP_FACTOR = 0.08 // Frame-by-frame interpolation factor for silky smooth motion
-const DEADBAND = 35 // Raw count noise threshold to suppress sensor jitter when stationary
-
-function lerp(current: number, target: number, factor: number): number {
-  const diff = target - current
-  if (Math.abs(diff) < DEADBAND) {
-    return current + diff * 0.02
-  }
-  return current + diff * factor
+interface VisualizeScreenProps {
+  codename: string
+  connectionType?: DeviceType
+  onBack: () => void
 }
 
 function VisualizeScreen({
   codename,
+  connectionType = 'usb',
   onBack
-}: {
-  codename: string
-  onBack: () => void
-}): React.JSX.Element {
-  const [state, setState] = useState<TelemetryReading>()
-  const targetRef = useRef<TelemetryReading | null>(null)
-  const currentRef = useRef<TelemetryReading | null>(null)
+}: VisualizeScreenProps): React.JSX.Element {
+  const state = useSmoothedTelemetry()
 
-  useEffect(() => {
-    const cleanup = window.api.onESP32Telemetry((result) => {
-      targetRef.current = result
-    })
+  const accelX = state ? countsToG(state.accelX) : undefined
+  const accelY = state ? countsToG(state.accelY) : undefined
+  const accelZ = state ? countsToG(state.accelZ) : undefined
 
-    let animationFrameId: number
+  const { roll, pitch, yaw } = state
+    ? computeOrientation(state)
+    : { roll: undefined, pitch: undefined, yaw: undefined }
 
-    const updateLoop = (): void => {
-      if (targetRef.current) {
-        if (!currentRef.current) {
-          currentRef.current = { ...targetRef.current }
-        } else {
-          currentRef.current = {
-            accelX: lerp(currentRef.current.accelX, targetRef.current.accelX, LERP_FACTOR),
-            accelY: lerp(currentRef.current.accelY, targetRef.current.accelY, LERP_FACTOR),
-            accelZ: lerp(currentRef.current.accelZ, targetRef.current.accelZ, LERP_FACTOR)
-          }
-        }
-        setState({ ...currentRef.current })
-      }
-      animationFrameId = requestAnimationFrame(updateLoop)
-    }
-
-    animationFrameId = requestAnimationFrame(updateLoop)
-
-    return () => {
-      cleanup()
-      cancelAnimationFrame(animationFrameId)
-    }
-  }, [])
-
-  const accelX = state ? state.accelX / LSB_PER_G : undefined
-  const accelY = state ? state.accelY / LSB_PER_G : undefined
-  const accelZ = state ? state.accelZ / LSB_PER_G : undefined
-
-  const roll =
-    state && state.accelY !== undefined && state.accelZ !== undefined
-      ? Math.atan2(state.accelY, state.accelZ) * (180 / Math.PI)
-      : undefined
-
-  const pitch =
-    state && state.accelX !== undefined
-      ? Math.atan2(
-          -state.accelX,
-          Math.sqrt(state.accelY * state.accelY + state.accelZ * state.accelZ)
-        ) *
-        (180 / Math.PI)
-      : undefined
-
-  const yaw = state ? 0 : undefined
+  const isWifi = connectionType === 'wifi'
 
   return (
     <div className="flex h-full flex-col">
@@ -95,7 +45,14 @@ function VisualizeScreen({
             </span>
           </div>
         </div>
-        <span className="font-mono text-[11px] text-fg-dim">100 Hz &middot; USB</span>
+        <span className="flex items-center gap-1.5 font-mono text-[11px] text-fg-dim">
+          {isWifi ? (
+            <Wifi size={13} className="text-amber" />
+          ) : (
+            <Usb size={13} className="text-amber" />
+          )}
+          {isWifi ? 'WI-FI' : 'USB SERIAL'}
+        </span>
       </div>
 
       <div className="flex flex-1">
