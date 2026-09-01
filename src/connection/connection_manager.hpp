@@ -21,6 +21,7 @@ private:
     std::vector<ITransport*> transportsList;
     std::vector<TransportChangeCallback> onTransportChangeListeners;
 
+    void handleTransportStateChange(ITransport* transport, bool isReady);
     void evaluateActiveTransport();
     ITransport* selectReadyTransport();
     void notifyListeners(ITransport* transport);

@@ -1,0 +1,2 @@
+export const WIFI_TELEMETRY_PORT = 8080
+export const SOCKET_CLOSE_DELAY_MS = 100
