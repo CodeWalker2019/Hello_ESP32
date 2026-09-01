@@ -1,12 +1,13 @@
-import { Circle } from 'lucide-react'
+interface HeaderProps {
+  left: React.ReactNode
+  right?: React.ReactNode
+}
 
-function Header(): React.JSX.Element {
+function Header({ left, right }: HeaderProps): React.JSX.Element {
   return (
-    <div className="flex items-center gap-2 border-b border-amber-dim bg-bg-header px-5 py-2.5">
-      <Circle size={8} className="fill-amber text-amber" />
-      <span className="text-[11px] tracking-[0.15em] text-fg-dim">
-        IMU TELEMETRY &middot; GROUND STATION
-      </span>
+    <div className="flex h-13 shrink-0 items-center justify-between border-b border-rule px-10">
+      {left}
+      {right}
     </div>
   )
 }

@@ -1,8 +1,10 @@
-import { ArrowLeft, Usb, Wifi } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Cube3D from '@renderer/components/Cube3D'
+import Header from '@renderer/components/Header'
 import Readout from '@renderer/components/Readout'
 import { useSmoothedTelemetry } from '@renderer/helpers/useSmoothedTelemetry'
 import { computeOrientation, countsToG } from '@renderer/helpers/telemetryMath'
+import { formatSigned } from '@renderer/helpers/format'
 import type { DeviceType } from '@renderer/types'
 
 interface VisualizeScreenProps {
@@ -30,49 +32,70 @@ function VisualizeScreen({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-amber-dim px-6 py-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 rounded border border-amber-dim px-2.5 py-1.5 font-mono text-[11px] tracking-[0.08em] text-fg-dim transition-colors hover:border-amber hover:text-fg cursor-pointer"
-          >
-            <ArrowLeft size={13} /> DEVICES
-          </button>
-          <div className="flex items-center gap-2.5">
-            <div className="h-2 w-2 rounded-full bg-good shadow-[0_0_8px_#6FCB9F]" />
-            <span className="font-mono text-xs tracking-widest text-fg">
-              LINKED &middot; {codename}
+      <Header
+        left={
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-fg-3 transition-colors duration-120 hover:text-fg"
+            >
+              <ArrowLeft size={14} /> Devices
+            </button>
+            <span className="font-mono text-[10.5px] font-medium tracking-[0.16em] text-fg-4 uppercase">
+              {codename}
             </span>
           </div>
-        </div>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] text-fg-dim">
-          {isWifi ? (
-            <Wifi size={13} className="text-amber" />
-          ) : (
-            <Usb size={13} className="text-amber" />
-          )}
-          {isWifi ? 'WI-FI' : 'USB SERIAL'}
-        </span>
-      </div>
+        }
+        right={
+          <span className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.1em] text-fg-6 uppercase">
+            <span className="h-1.25 w-1.25 rounded-full bg-good" />
+            Linked &middot; {isWifi ? 'Wi-Fi' : 'USB serial'}
+          </span>
+        }
+      />
 
-      <div className="flex flex-1">
-        <div className="relative flex-1 bg-grid-lines">
+      <div className="flex min-h-0 flex-1 flex-col px-20 pt-10 pb-12">
+        <div className="relative min-h-0 flex-1">
           <Cube3D pitch={pitch} roll={roll} yaw={yaw} />
         </div>
 
-        <div className="w-55 border-l border-amber-dim px-5 py-5">
-          <div className="mb-3 font-display text-[13px] tracking-widest text-fg-dim uppercase">
-            Orientation
-          </div>
-          <Readout label="ROLL" value={roll !== undefined ? roll.toFixed(1) : '--'} unit="°" />
-          <Readout label="PITCH" value={pitch !== undefined ? pitch.toFixed(1) : '--'} unit="°" />
-          <Readout label="YAW" value={yaw !== undefined ? yaw.toFixed(1) : '--'} unit="°" />
-          <div className="mt-5 mb-3 font-display text-[13px] tracking-widest text-fg-dim uppercase">
-            Raw Accel
-          </div>
-          <Readout label="X" value={accelX !== undefined ? accelX.toFixed(2) : '--'} unit="g" />
-          <Readout label="Y" value={accelY !== undefined ? accelY.toFixed(2) : '--'} unit="g" />
-          <Readout label="Z" value={accelZ !== undefined ? accelZ.toFixed(2) : '--'} unit="g" />
+        <div className="mt-9 grid grid-cols-3 gap-x-10 gap-y-6.5">
+          <Readout
+            variant="orientation"
+            label="Roll"
+            value={roll !== undefined ? formatSigned(roll, 1) : '--'}
+            unit="°"
+          />
+          <Readout
+            variant="orientation"
+            label="Pitch"
+            value={pitch !== undefined ? formatSigned(pitch, 1) : '--'}
+            unit="°"
+          />
+          <Readout
+            variant="orientation"
+            label="Yaw"
+            value={yaw !== undefined ? formatSigned(yaw, 1) : '--'}
+            unit="°"
+          />
+          <Readout
+            variant="accel"
+            label="Accel X"
+            value={accelX !== undefined ? formatSigned(accelX, 2) : '--'}
+            unit="g"
+          />
+          <Readout
+            variant="accel"
+            label="Accel Y"
+            value={accelY !== undefined ? formatSigned(accelY, 2) : '--'}
+            unit="g"
+          />
+          <Readout
+            variant="accel"
+            label="Accel Z"
+            value={accelZ !== undefined ? formatSigned(accelZ, 2) : '--'}
+            unit="g"
+          />
         </div>
       </div>
     </div>

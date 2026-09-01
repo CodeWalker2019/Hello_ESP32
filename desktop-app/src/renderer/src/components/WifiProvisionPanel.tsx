@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Wifi, KeyRound } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface FoundDevice {
   address: string
@@ -16,7 +16,6 @@ function WifiProvisionPanel({ onProvisioningChange }: WifiProvisionPanelProps): 
   const [isProvisioning, setIsProvisioning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [foundDevices, setFoundDevices] = useState<FoundDevice[]>([])
-  const [isLoadingCurrentNetwork, setIsLoadingCurrentNetwork] = useState(false)
 
   useEffect((): (() => void) => {
     return window.api.onEsptouchDeviceFound((device: FoundDevice): void => {
@@ -64,103 +63,73 @@ function WifiProvisionPanel({ onProvisioningChange }: WifiProvisionPanelProps): 
     setProvisioning(false)
   }
 
-  const handleUseCurrentNetwork = async (): Promise<void> => {
-    setError(null)
-    setIsLoadingCurrentNetwork(true)
-    try {
-      const result = await window.api.getCurrentNetworkCredentials()
-      if (result.success && result.ssid !== undefined) {
-        setSsid(result.ssid)
-        if (result.password !== undefined) {
-          setPassword(result.password)
-        }
-        if (result.passwordError) {
-          setError(result.passwordError)
-        }
-      } else {
-        setError(result.error ?? 'Failed to read current Wi-Fi network')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to read current Wi-Fi network')
-    } finally {
-      setIsLoadingCurrentNetwork(false)
-    }
-  }
-
   return (
-    <div className="w-full max-w-105 rounded border border-amber-dim bg-panel px-4.5 py-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 font-display text-[13px] tracking-widest text-fg-dim uppercase">
-          <Wifi size={14} className="text-amber" /> Provision New Device
+    <div className="flex items-start gap-12">
+      <div className="w-45 shrink-0">
+        <div className="font-mono text-[10.5px] font-medium tracking-[0.14em] text-fg-5 uppercase">
+          Provision
         </div>
-        <button
-          type="button"
-          onClick={() => void handleUseCurrentNetwork()}
-          disabled={isProvisioning || isLoadingCurrentNetwork}
-          className="flex cursor-pointer items-center gap-1.5 font-mono text-[10px] tracking-[0.06em] text-fg-dim transition-colors hover:text-amber disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isLoadingCurrentNetwork ? (
-            <Loader2 size={11} className="animate-spin" />
-          ) : (
-            <KeyRound size={11} />
-          )}
-          USE CURRENT NETWORK
-        </button>
+        <p className="mt-2.5 text-[12.5px] leading-normal text-fg-5">
+          Broadcasts credentials to a new board over the air.
+        </p>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-2.5">
-        <input
-          type="text"
-          placeholder="Wi-Fi SSID"
-          value={ssid}
-          onChange={(e) => setSsid(e.target.value)}
-          disabled={isProvisioning}
-          maxLength={32}
-          className="rounded border border-amber-dim bg-bg px-3 py-2 font-mono text-xs text-fg placeholder:text-fg-dim focus:border-amber focus:outline-none disabled:opacity-50"
-        />
-        <input
-          type="password"
-          placeholder="Wi-Fi Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isProvisioning}
-          maxLength={64}
-          className="rounded border border-amber-dim bg-bg px-3 py-2 font-mono text-xs text-fg placeholder:text-fg-dim focus:border-amber focus:outline-none disabled:opacity-50"
-        />
-
-        {isProvisioning ? (
-          <button
-            type="button"
-            onClick={() => void handleStop()}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded border border-amber-dim py-2 font-mono text-[11px] tracking-[0.08em] text-fg-dim transition-colors hover:border-amber hover:text-fg"
-          >
-            <Loader2 size={13} className="animate-spin" /> BROADCASTING&hellip; STOP
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!ssid}
-            className="cursor-pointer rounded border border-amber-dim py-2 font-mono text-[11px] tracking-[0.08em] text-fg-dim transition-colors hover:border-amber hover:text-fg disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            START PROVISIONING
-          </button>
-        )}
-      </form>
-
-      {error && <div className="mt-3 font-mono text-[11px] text-bad">{error}</div>}
-
-      {foundDevices.length > 0 && (
-        <div className="mt-3 flex flex-col gap-1">
-          {foundDevices.map((device) => (
-            <div key={device.mac} className="font-mono text-[11px] text-good">
-              Device {device.mac} responded — joining &ldquo;{ssid}&rdquo;&hellip;
-            </div>
-          ))}
-          <div className="mt-1 font-mono text-[11px] text-fg-dim">
-            It will appear in the device list above once it&apos;s connected.
+      <div className="flex-1">
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex items-end gap-4">
+          <div className="flex-1">
+            <div className="mb-1.5 text-[11.5px] text-fg-4">Network</div>
+            <input
+              type="text"
+              value={ssid}
+              onChange={(e) => setSsid(e.target.value)}
+              disabled={isProvisioning}
+              maxLength={32}
+              className="w-full border-0 border-b border-input-rule bg-transparent pb-2.25 text-sm text-fg placeholder:text-fg-5 focus:border-fg focus:outline-none disabled:opacity-50"
+            />
           </div>
-        </div>
-      )}
+          <div className="flex-1">
+            <div className="mb-1.5 text-[11.5px] text-fg-4">Password</div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isProvisioning}
+              maxLength={64}
+              className="w-full border-0 border-b border-input-rule bg-transparent pb-2.25 text-sm tracking-[0.1em] text-fg placeholder:text-fg-5 focus:border-fg focus:outline-none disabled:opacity-50"
+            />
+          </div>
+
+          {isProvisioning ? (
+            <button
+              type="button"
+              onClick={() => void handleStop()}
+              className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-input-rule bg-bg px-4.5 py-2.75 text-[13px] font-semibold text-fg"
+            >
+              <Loader2 size={13} className="animate-spin" /> Broadcasting&hellip; stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!ssid}
+              className="shrink-0 cursor-pointer rounded-lg bg-fg px-4.5 py-2.75 text-[13px] font-semibold text-bg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Broadcast
+            </button>
+          )}
+        </form>
+
+        {error && <div className="mt-3 font-mono text-[11.5px] text-bad">{error}</div>}
+
+        {foundDevices.length > 0 && (
+          <div className="mt-3 flex flex-col gap-1">
+            {foundDevices.map((device) => (
+              <div key={device.mac} className="font-mono text-[11.5px] text-good">
+                Device {device.mac} responded — joining &ldquo;{ssid}&rdquo;&hellip;
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

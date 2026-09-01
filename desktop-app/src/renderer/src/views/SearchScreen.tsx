@@ -1,6 +1,5 @@
-import { Radio, Usb, Wifi } from 'lucide-react'
 import DeviceCard from '@renderer/components/DeviceCard'
-import ScanSweep from '@renderer/components/ScanSweep'
+import Header from '@renderer/components/Header'
 import WifiProvisionPanel from '@renderer/components/WifiProvisionPanel'
 import { useDeviceConnection } from '@renderer/helpers/useDeviceConnection'
 import { useDeviceScan } from '@renderer/helpers/useDeviceScan'
@@ -14,59 +13,64 @@ function SearchScreen({
   const { connectingId, connect } = useDeviceConnection(onConnected)
   const { devices, isScanning, setProvisioning } = useDeviceScan()
 
+  const heading = isScanning
+    ? 'Searching for beacon'
+    : devices.length > 0
+      ? 'Devices found'
+      : 'No devices found'
+
   return (
-    <div className="flex h-full flex-col items-center px-8 py-12">
-      <div className="mb-1.5 flex items-center gap-2.5 self-start">
-        <Radio size={16} className="text-amber" />
-        <span className="font-mono text-[11px] tracking-[0.15em] text-fg-dim uppercase">
-          Telemetry Link &middot; Device Acquisition
-        </span>
-      </div>
-      <h1 className="mt-1 mb-8 self-start font-display text-3xl font-medium tracking-[0.02em] uppercase">
-        {isScanning
-          ? 'Searching for beacon...'
-          : devices.length > 0
-            ? 'Devices Found'
-            : 'No Devices Found'}
-      </h1>
+    <div className="flex h-full flex-col">
+      <Header
+        left={
+          <span className="font-mono text-[10.5px] font-medium tracking-[0.16em] text-fg-4 uppercase">
+            IMU Telemetry &nbsp;/&nbsp; Ground Station
+          </span>
+        }
+        right={
+          isScanning ? (
+            <span className="flex items-center gap-2 font-mono text-[10.5px] tracking-[0.1em] text-fg-6 uppercase">
+              <span className="h-1.25 w-1.25 animate-pulse-dot rounded-full bg-good" />
+              Scanning
+            </span>
+          ) : undefined
+        }
+      />
 
-      <ScanSweep />
+      <div className="flex min-h-0 flex-1 flex-col px-20 pt-19 pb-10">
+        <h1 className="text-[44px] leading-[1.05] font-semibold tracking-[-0.03em] text-fg">
+          {heading}
+        </h1>
+        <p className="mt-3.5 max-w-105 text-[15px] leading-[1.55] text-fg-3">
+          {devices.length} compatible device{devices.length === 1 ? '' : 's'} on serial and Wi-Fi.
+          Pick one to stream live orientation.
+        </p>
 
-      <div className="my-7 font-mono text-xs tracking-wider text-fg-dim">
-        {isScanning ? (
-          <span className="text-amber">SCANNING SERIAL &amp; WI-FI INTERFACES...</span>
-        ) : (
-          <span>FOUND {devices.length} COMPATIBLE DEVICE(S)</span>
-        )}
-      </div>
+        <div className="mt-13 border-t border-rule">
+          {devices.map((device: ScannedDevice, i: number): React.JSX.Element => (
+            <DeviceCard
+              key={device.id}
+              index={i + 1}
+              codename={device.codename}
+              id={device.id}
+              rssi={device.rssi}
+              type={device.type}
+              connecting={connectingId === device.id}
+              onConnect={(): void => {
+                void connect(device.id, device.type)
+              }}
+            />
+          ))}
+        </div>
 
-      <div className="flex w-full max-w-105 flex-col gap-2.5">
-        {devices.map((device: ScannedDevice): React.JSX.Element => (
-          <DeviceCard
-            key={device.id}
-            codename={device.codename}
-            id={device.id}
-            rssi={device.rssi}
-            type={device.type}
-            connecting={connectingId === device.id}
-            onConnect={(): void => {
-              void connect(device.id, device.type)
-            }}
-          />
-        ))}
-      </div>
+        <div className="mt-14">
+          <WifiProvisionPanel onProvisioningChange={setProvisioning} />
+        </div>
 
-      <div className="mt-7 w-full max-w-105">
-        <WifiProvisionPanel onProvisioningChange={setProvisioning} />
-      </div>
-
-      <div className="mt-auto flex gap-6 pt-8 font-mono text-[11px] text-fg-dim">
-        <span className="flex items-center gap-1.5 opacity-50">
-          <Wifi size={13} /> WIRELESS &middot; ACTIVE
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Usb size={13} /> USB &middot; ACTIVE
-        </span>
+        <div className="mt-auto flex gap-6.5 pt-8 font-mono text-[10.5px] tracking-[0.1em] text-fg-7 uppercase">
+          <span>Wireless &middot; active</span>
+          <span>USB &middot; active</span>
+        </div>
       </div>
     </div>
   )

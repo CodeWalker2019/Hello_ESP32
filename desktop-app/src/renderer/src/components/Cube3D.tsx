@@ -4,7 +4,21 @@ import { useCubeRotation } from '@renderer/helpers/useCubeRotation'
 
 const FACE_TRANSFORMS = getCubeFaceTransforms(CUBE_SIZE)
 
-const FACE_LABELS = ['+X FRONT', '-X BACK', '+Y RIGHT', '-Y LEFT', '+Z TOP', '-Z BTM']
+interface FaceStyle {
+  fill: string
+  label: string
+  align: 'flex-end' | 'flex-start'
+  labelColor: string
+}
+
+const FACES: FaceStyle[] = [
+  { fill: '#e8e6e1', label: '+X', align: 'flex-end', labelColor: 'text-fg-5' },
+  { fill: '#dcdad4', label: '', align: 'flex-end', labelColor: 'text-fg-5' },
+  { fill: '#d6d3cc', label: '', align: 'flex-end', labelColor: 'text-fg-5' },
+  { fill: '#cdcac2', label: '-Y LEFT', align: 'flex-end', labelColor: 'text-fg-5' },
+  { fill: '#f8f7f4', label: '+Z TOP', align: 'flex-start', labelColor: 'text-fg-6' },
+  { fill: '#cdcac3', label: '', align: 'flex-end', labelColor: 'text-fg-5' }
+]
 
 interface Cube3DProps {
   pitch?: number
@@ -17,26 +31,20 @@ function Cube3D({ pitch, roll, yaw = 0 }: Cube3DProps): React.JSX.Element {
 
   const isLive = pitch !== undefined && roll !== undefined
 
-  // Base 3/4 elevated view (-22° pitch, 35° yaw)
   const baseAngleX = -22
   const baseAngleY = 35
 
-  // Invert pitch so tilting the board nose-up tilts the 3D model nose-up
   const rotX = isLive ? baseAngleX - pitch : defaultRotation.x
   const rotY = isLive ? baseAngleY + yaw : defaultRotation.y
   const rotZ = isLive ? -roll : 0
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center [perspective:600px] [perspective-origin:50%_35%] overflow-hidden">
-      {/* Ground Projection Shadow */}
+    <div className="relative flex h-full w-full items-center justify-center [perspective:700px] [perspective-origin:50%_40%]">
       <div
-        className="absolute h-44 w-44 rounded-full bg-amber/15 blur-2xl pointer-events-none"
-        style={{
-          transform: 'translateY(95px) rotateX(75deg) scale(1.3)'
-        }}
+        className="pointer-events-none absolute h-62.5 w-62.5 rounded-full bg-fg/12 blur-[28px]"
+        style={{ transform: 'translateY(140px) rotateX(75deg) scale(1.25)' }}
       />
 
-      {/* 3D Cube Model */}
       <div
         className={`relative [transform-style:preserve-3d] ${isLive ? '' : 'transition-transform duration-75 ease-out'}`}
         style={{
@@ -45,22 +53,29 @@ function Cube3D({ pitch, roll, yaw = 0 }: Cube3DProps): React.JSX.Element {
           transform: `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`
         }}
       >
-        {FACE_TRANSFORMS.map((transform, i) => (
-          <div
-            key={i}
-            className="absolute flex items-center justify-center border border-amber/70 bg-gradient-to-br from-amber/20 via-amber/5 to-transparent shadow-[inset_0_0_15px_rgba(245,158,11,0.15)]"
-            style={{ width: CUBE_SIZE, height: CUBE_SIZE, transform }}
-          >
-            <span className="font-mono text-[9px] font-semibold tracking-widest text-amber/80 select-none">
-              {FACE_LABELS[i]}
-            </span>
-          </div>
-        ))}
+        {FACE_TRANSFORMS.map((transform, i) => {
+          const face = FACES[i]
+          return (
+            <div
+              key={i}
+              className={`absolute box-border flex border border-fg/[5.5%] p-2.5 [backface-visibility:hidden] ${
+                face.align === 'flex-start' ? 'items-start' : 'items-end'
+              }`}
+              style={{ width: CUBE_SIZE, height: CUBE_SIZE, transform, backgroundColor: face.fill }}
+            >
+              {face.label && (
+                <span
+                  className={`font-mono text-[9px] tracking-[0.12em] select-none ${face.labelColor}`}
+                >
+                  {face.label}
+                </span>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 export default Cube3D
-
-
