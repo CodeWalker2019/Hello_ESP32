@@ -9,7 +9,7 @@
 static const char* TAG = "TcpServer";
 static constexpr uint32_t TCP_SERVER_STACK_DEPTH = 4096;
 static constexpr UBaseType_t TCP_SERVER_TASK_PRIORITY = 5;
-static constexpr int TCP_LISTEN_BACKLOG = 1;
+static constexpr int TCP_SERVER_BACKLOG = 1;
 static constexpr size_t TCP_RX_DUMMY_BUFFER_SIZE = 64;
 
 TcpServer::TcpServer() = default;
@@ -102,7 +102,7 @@ int TcpServer::createListeningSocket(uint16_t port) {
         return -1;
     }
 
-    if (listen(listen_socket, TCP_LISTEN_BACKLOG) < 0) {
+    if (listen(listen_socket, TCP_SERVER_BACKLOG) < 0) {
         ESP_LOGE(TAG, "Error during listen: errno %d", errno);
         close(listen_socket);
         return -1;

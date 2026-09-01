@@ -33,8 +33,7 @@ bool WifiTransport::init() {
     });
 
     if (touchHandler.start() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start WifiTouch sniffer");
-        return false;
+        ESP_LOGW(TAG, "Failed to start WifiTouch sniffer (might already be running)");
     }
 
     if (!tcpServer.start(8080)) {
@@ -52,14 +51,25 @@ bool WifiTransport::isReady() const {
 
 void WifiTransport::setBeaconEnabled(bool enabled) {
     netifManager.setBeaconEnabled(enabled);
+    
+    if (!enabled && isReady()) {
+        touchHandler.stop();
+    }
 }
 
 size_t WifiTransport::send(const uint8_t* data, size_t len) {
+    if (!isReady()) {
+        return 0;
+    }
     return tcpServer.sendData(data, len);
 }
 
 void WifiTransport::setOnStateChangeListener(StateChangeCallback callback) {
     stateChangeCallback = callback;
+    
+    if (stateChangeCallback) {
+        stateChangeCallback(this, isReady());
+    }
 }
 
 void WifiTransport::handleCredentialsReceived(const wifi_config_t& wifi_cfg) {
@@ -79,11 +89,9 @@ void WifiTransport::handleConnectionStatusChanged(bool isConnected) {
 void WifiTransport::handleClientStateChanged(bool isConnected) {
     if (isConnected) {
         ESP_LOGI(TAG, "Desktop TCP client connected. Telemetry streaming ready.");
-    }
-    
-    if (!isConnected) {
-        ESP_LOGW(TAG, "Desktop TCP client disconnected. Resetting transport state to idle...");
-        netifManager.disconnectStation();
+        touchHandler.stop();
+    } else {
+        ESP_LOGW(TAG, "Desktop TCP client disconnected. Resuming SmartConfig discovery...");
         touchHandler.start();
     }
 

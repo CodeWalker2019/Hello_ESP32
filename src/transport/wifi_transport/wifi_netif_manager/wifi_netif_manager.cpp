@@ -1,6 +1,15 @@
 #include "transport/wifi_transport/wifi_netif_manager/wifi_netif_manager.hpp"
 #include <esp_log.h>
 #include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+namespace {
+    constexpr uint16_t kBeaconPort = 7001;
+    constexpr uint32_t kBeaconIntervalMs = 1000;
+    constexpr uint32_t kBeaconTaskStackSize = 3072;
+    constexpr UBaseType_t kBeaconTaskPriority = 1;
+}
 
 static const char* TAG = "WifiNetifManager";
 
@@ -16,6 +25,10 @@ WifiNetifManager::WifiNetifManager()
 }
 
 WifiNetifManager::~WifiNetifManager() {
+    if (beacon_task_handle) {
+        vTaskDelete(beacon_task_handle);
+        beacon_task_handle = nullptr;
+    }
     if (sta_netif) {
         esp_netif_destroy_default_wifi(sta_netif);
         sta_netif = nullptr;
@@ -80,11 +93,17 @@ bool WifiNetifManager::startApStaMode(const char* softap_ssid) {
         return false;
     }
 
+    strncpy(beacon_message, softap_ssid, sizeof(beacon_message) - 1);
+    xTaskCreate(&WifiNetifManager::beaconTask, "wifi_udp_beacon", kBeaconTaskStackSize, this,
+                kBeaconTaskPriority, &beacon_task_handle);
+
     ESP_LOGI(TAG, "APSTA mode started with SoftAP SSID: %s", softap_ssid);
     return true;
 }
 
 bool WifiNetifManager::connectStation(const wifi_config_t& sta_config) {
+    esp_wifi_disconnect();
+
     if (esp_wifi_set_config(WIFI_IF_STA, const_cast<wifi_config_t*>(&sta_config)) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to apply station configuration");
         return false;
@@ -106,6 +125,8 @@ void WifiNetifManager::disconnectStation() {
 }
 
 void WifiNetifManager::setBeaconEnabled(bool enabled) {
+    beacon_enabled = enabled;
+
     wifi_config_t ap_config = {};
     if (esp_wifi_get_config(WIFI_IF_AP, &ap_config) == ESP_OK) {
         ap_config.ap.ssid_hidden = enabled ? 0 : 1;
@@ -134,11 +155,41 @@ void WifiNetifManager::event_handler(void* arg, esp_event_base_t event_base, int
             self->status_callback(true);
         }
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGW(TAG, "Station disconnected from AP");
-        
+        ESP_LOGW(TAG, "Station disconnected from AP, retrying...");
+
         self->is_connected = false;
         if (self->status_callback) {
             self->status_callback(false);
         }
+
+        esp_wifi_connect();
+    }
+}
+
+void WifiNetifManager::beaconTask(void* arg) {
+    auto* self = static_cast<WifiNetifManager*>(arg);
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock < 0) {
+        ESP_LOGE(TAG, "Failed to create UDP beacon socket");
+        vTaskDelete(nullptr);
+        return;
+    }
+
+    int broadcast_enable = 1;
+    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable));
+
+    sockaddr_in dest_addr = {};
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(kBeaconPort);
+    dest_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+    while (true) {
+         if (self->beacon_enabled && self->is_connected) {
+            size_t len = strnlen(self->beacon_message, sizeof(self->beacon_message));
+            sendto(sock, self->beacon_message, len, 0, reinterpret_cast<sockaddr*>(&dest_addr),
+                   sizeof(dest_addr));
+        }
+        vTaskDelay(pdMS_TO_TICKS(kBeaconIntervalMs));
     }
 }

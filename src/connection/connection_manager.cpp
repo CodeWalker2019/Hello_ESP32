@@ -7,19 +7,15 @@ ConnectionManager::ConnectionManager(std::vector<ITransport*> transports)
     : transportsList(std::move(transports)) {}
 
 void ConnectionManager::init() {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (ITransport* transport : transportsList) {
-            if (transport != nullptr) {
-                transport->setOnStateChangeListener([this](ITransport* t, bool ready) {
-                    this->handleTransportStateChange(t, ready);
-                });
-                transport->init();
-            }
+    for (ITransport* transport : transportsList) {
+        if (transport != nullptr) {
+            transport->setOnStateChangeListener([this](ITransport* t, bool ready) {
+                this->handleTransportStateChange(t, ready);
+            });
+            transport->init();
         }
     }
     
-    std::lock_guard<std::mutex> lock(mutex_);
     evaluateActiveTransport();
 }
 
@@ -56,17 +52,28 @@ void ConnectionManager::handleTransportStateChange(ITransport* transport, bool i
 }
 
 void ConnectionManager::evaluateActiveTransport() {
-    ITransport* readyTransport = selectReadyTransport();
+    ITransport* newlySelectedTransport = nullptr;
+    bool stateChanged = false;
 
-    if (readyTransport != activeTransport) {
-        activeTransport = readyTransport;
-        notifyListeners(activeTransport);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        ITransport* readyTransport = selectReadyTransport();
+
+        if (readyTransport != activeTransport) {
+            activeTransport = readyTransport;
+            newlySelectedTransport = activeTransport;
+            stateChanged = true;
+        }
+
+        for (ITransport* transport : transportsList) {
+            if (transport != nullptr) {
+                transport->setBeaconEnabled(transport != activeTransport);
+            }
+        }
     }
 
-    for (ITransport* transport : transportsList) {
-        if (transport != nullptr) {
-            transport->setBeaconEnabled(transport != activeTransport);
-        }
+    if (stateChanged) {
+        notifyListeners(newlySelectedTransport);
     }
 }
 

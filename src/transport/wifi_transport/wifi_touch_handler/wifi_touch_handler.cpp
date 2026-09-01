@@ -2,9 +2,12 @@
 #include "esp_smartconfig.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "app_config.h"
 #include <cstring>
 
 static const char* TAG = "WifiTouch";
+
+static char s_esptouch_v2_key[] = CONFIG_ESPTOUCH_V2_AES_KEY;
 
 WifiTouch::~WifiTouch() {
     stop();
@@ -12,6 +15,8 @@ WifiTouch::~WifiTouch() {
 
 esp_err_t WifiTouch::start() {
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
+    cfg.esp_touch_v2_enable_crypt = true;
+    cfg.esp_touch_v2_key = s_esptouch_v2_key;
     esp_err_t ret = ESP_OK;
 
     ret = esp_smartconfig_set_type(SC_TYPE_ESPTOUCH_V2);
@@ -19,6 +24,9 @@ esp_err_t WifiTouch::start() {
 
     ret = esp_smartconfig_start(&cfg);
     ESP_GOTO_ON_ERROR(ret, err_cleanup, TAG, "Failed to start smartconfig");
+
+    ret = esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &WifiTouch::event_handler, this);
+    ESP_GOTO_ON_ERROR(ret, err_cleanup, TAG, "Failed to register SmartConfig event handler");
 
     isSnifferActive.store(true);
     ESP_LOGI(TAG, "WifiTouch sniffer started successfully");

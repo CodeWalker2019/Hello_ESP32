@@ -6,6 +6,7 @@
 #include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "freertos/task.h"
 
 class WifiNetifManager {
 public:
@@ -44,8 +45,10 @@ public:
     void disconnectStation();
 
     /**
-     * @brief Toggles SoftAP beaconing/advertising visibility.
-     * @param enabled True to broadcast SSID, false to hide/disable beacon.
+     * @brief Toggles SoftAP beacon visibility and the UDP discovery beacon
+     *        (broadcast on the station interface once connected, so the
+     *        desktop app's UDP listener can find this device on the LAN).
+     * @param enabled True to broadcast/announce, false to go quiet.
      */
     void setBeaconEnabled(bool enabled);
 
@@ -64,9 +67,14 @@ private:
     esp_netif_t* ap_netif = nullptr;
     wifi_init_config_t cfg;
 
-    bool is_connected = false;
+    volatile bool is_connected = false;
     ConnectionStatusCallback status_callback = nullptr;
+
+    volatile bool beacon_enabled = true;
+    char beacon_message[33] = {};
+    TaskHandle_t beacon_task_handle = nullptr;
 
     static EventGroupHandle_t s_wifi_event_group;
     static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    static void beaconTask(void* arg);
 };
