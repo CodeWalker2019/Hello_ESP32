@@ -30,10 +30,17 @@
 // -----------------------------------------------------------------------------
 // Full 8-Bit Instruction Set Commands (Datasheet Table)
 // -----------------------------------------------------------------------------
-#define LCD_CMD_FUNCTION_SET     0x28  // 4-Bit Bus, 2 Lines, 5x8 Font
-#define LCD_CMD_DISPLAY_OFF      0x08  // Display OFF, Cursor OFF, Blink OFF
-#define LCD_CMD_CLEAR_DISPLAY    0x01  // Clear Memory and Reset Cursor
-#define LCD_CMD_ENTRY_MODE_SET   0x06  // Auto-Increment Cursor, Shift OFF
-#define LCD_CMD_DISPLAY_ON       0x0C  // Display ON, Cursor OFF, Blink OFF        
+#define LCD_CMD_FUNCTION_SET          0x28  // 4-Bit Bus, 2 Lines, 5x8 Font
+#define LCD_CMD_DISPLAY_OFF           0x08  // Display OFF, Cursor OFF, Blink OFF
+#define LCD_CMD_CLEAR_DISPLAY         0x01  // Clear Memory and Reset Cursor
+#define LCD_CMD_ENTRY_MODE_SET        0x06  // Auto-Increment Cursor, Shift OFF
+#define LCD_CMD_DISPLAY_ON            0x0C  // Display ON, Cursor OFF, Blink OFF        
+#define LCD_CMD_FUNCTION_RETURN_HOME  0x02  // Returns display from being shifted
+                                            //  to original position.
 
-void init_lcd(void);
+// -----------------------------------------------------------------------------
+// Public API
+// -----------------------------------------------------------------------------
+void lcd_init(void);
+void lcd_send_cmd(uint8_t cmd);
+void lcd_send_data(uint8_t data);
