@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 
 #define MOTION_SENSOR_I2C_PORT     I2C_NUM_0
 #define MOTION_SENSOR_SDA_GPIO     21
