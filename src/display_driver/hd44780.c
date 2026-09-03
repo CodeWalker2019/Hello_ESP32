@@ -60,13 +60,6 @@ static void lcd_write_byte(uint8_t byte) {
     esp_rom_delay_us(default_cmd_delay);
 }
 
-static void send_cmd_with_delay(uint8_t cmd, int delay) {
-    lcd_write_nibble(cmd >> 4);
-    perform_pulse_with(default_cmd_delay);
-    lcd_write_nibble(cmd);     
-    perform_pulse_with(delay);
-}
-
 static void set_cursor(uint8_t position) {
     const uint8_t wrapped_pos = position % total_capacity;
     const uint8_t line_base = (wrapped_pos < max_line_chars_length) ? LCD_LINE1_ADDR : LCD_LINE2_ADDR;
@@ -95,17 +88,13 @@ void lcd_write_str32(const char* str) {
 void lcd_send_cmd(uint8_t cmd) {
     gpio_set_level(LCD_PIN_RS, 0);
     
-    if (cmd == LCD_CMD_CLEAR_DISPLAY) {
-        send_cmd_with_delay(LCD_CMD_CLEAR_DISPLAY, clear_display_cmd_delay);
-        return;
-    }
-
-    if (cmd == LCD_CMD_FUNCTION_RETURN_HOME) {
-        send_cmd_with_delay(LCD_CMD_FUNCTION_RETURN_HOME, return_home_cmd_delay);
-        return;
-    }
-    
     lcd_write_byte(cmd);
+
+    if (cmd == LCD_CMD_CLEAR_DISPLAY) {
+        esp_rom_delay_us(clear_display_cmd_delay);
+    } else if (cmd == LCD_CMD_FUNCTION_RETURN_HOME) {
+        esp_rom_delay_us(return_home_cmd_delay);
+    }
 }
 
 void lcd_send_data(uint8_t data) {

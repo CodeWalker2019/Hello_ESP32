@@ -21,9 +21,9 @@ void app_main(void) {
     motion_sensor_init();
     motion_sensor_check_present();
 
-    ESP_ERROR_CHECK(system_orchestrator_init());
+    lcd_write_str32("Motion sensor is detected!");
 
-    lcd_write_str32("Hello LCD!");
+    ESP_ERROR_CHECK(system_orchestrator_init());
 
     vTaskDelete(NULL);
 }
