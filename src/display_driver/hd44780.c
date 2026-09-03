@@ -12,6 +12,9 @@ static const uint8_t    default_cmd_delay                 =  50;
 static const uint32_t   power_on_stabilization_delay      =  50 * 1000; // 50 ms (50k μs)
 static const uint8_t    init_step_delay                   =  150;
 static const uint16_t   wake_up_sequence_delay            =  5 * 1000;  // 5 ms (5k μs)
+static const uint8_t    max_line_chars_length             =  16;
+static const uint8_t    screen_lines_available            =  2;
+static const uint8_t    total_capacity                    = max_line_chars_length * screen_lines_available;
 
 // -----------------------------------------------------------------------------
 // Helper functions
@@ -64,9 +67,30 @@ static void send_cmd_with_delay(uint8_t cmd, int delay) {
     perform_pulse_with(delay);
 }
 
+static void set_cursor(uint8_t position) {
+    const uint8_t wrapped_pos = position % total_capacity;
+    const uint8_t line_base = (wrapped_pos < max_line_chars_length) ? LCD_LINE1_ADDR : LCD_LINE2_ADDR;
+    const uint8_t col = wrapped_pos % max_line_chars_length;
+    const uint8_t cursor_position_addr = line_base + col;
+    lcd_send_cmd(LCD_CMD_CURSOR_POSITION_SET | cursor_position_addr);
+}
+
 // -----------------------------------------------------------------------------
 // Public API
 // -----------------------------------------------------------------------------
+
+void lcd_write_str32(const char* str) {
+    if (str == NULL) return;
+
+    uint8_t count = 0;
+    set_cursor(0);
+
+    while (*str != '\0' && count < total_capacity) {
+        if (count == max_line_chars_length) set_cursor(count);
+        lcd_send_data((uint8_t)*str++);
+        count++;
+    }
+}
 
 void lcd_send_cmd(uint8_t cmd) {
     gpio_set_level(LCD_PIN_RS, 0);

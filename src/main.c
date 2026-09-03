@@ -23,6 +23,8 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(system_orchestrator_init());
 
+    lcd_write_str32("Hello LCD!");
+
     vTaskDelete(NULL);
 }
 

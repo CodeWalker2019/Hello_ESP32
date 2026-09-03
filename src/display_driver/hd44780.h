@@ -1,6 +1,8 @@
 #pragma once
 
-/* 
+#include <stdint.h>
+
+/*
 * Datasheet document used for implementation
 * https://cdn.sparkfun.com/assets/9/5/f/7/b/HD44780.pdf
 */
@@ -12,6 +14,8 @@
 #define LCD_PIN_DB6              GPIO_NUM_16
 #define LCD_PIN_DB7              GPIO_NUM_15
 #define LCD_NIBBLE_MASK          0x0F
+#define LCD_LINE1_ADDR           0x0
+#define LCD_LINE2_ADDR           0x40
 
 // -----------------------------------------------------------------------------
 // HD44780 4-Bit Data Bus Line Masks
@@ -30,6 +34,7 @@
 // -----------------------------------------------------------------------------
 // Full 8-Bit Instruction Set Commands (Datasheet Table)
 // -----------------------------------------------------------------------------
+#define LCD_CMD_CURSOR_POSITION_SET   0x80  // Sets cursor in specified position
 #define LCD_CMD_FUNCTION_SET          0x28  // 4-Bit Bus, 2 Lines, 5x8 Font
 #define LCD_CMD_DISPLAY_OFF           0x08  // Display OFF, Cursor OFF, Blink OFF
 #define LCD_CMD_CLEAR_DISPLAY         0x01  // Clear Memory and Reset Cursor
@@ -44,3 +49,4 @@
 void lcd_init(void);
 void lcd_send_cmd(uint8_t cmd);
 void lcd_send_data(uint8_t data);
+void lcd_write_str32(const char* str);
