@@ -1,7 +1,7 @@
 #include "app_config.h"
 #include "system_orchestrator.hpp"
 #include "led_status/led_status.hpp"
-#include "sensors/motion_sensor.h"
+#include "sensors/orientation/orientation_filter.h"
 #include "tasks/sensor_task/sensor_task.hpp"
 #include "tasks/telemetry_task/telemetry_task.hpp"
 #include "tasks/lcd_task/lcd_task.hpp"
@@ -20,8 +20,8 @@ static TransportManager transportManager;
 static ConnectionManager connectionManager({ &usbTransport, &wifiTransport });
 
 extern "C" esp_err_t system_orchestrator_init(void) {
-    QueueHandle_t telemetryQueue = xQueueCreate(SENSOR_QUEUE_LENGTH, sizeof(motion_sensor_reading_t));
-    QueueHandle_t lcdQueue = xQueueCreate(SENSOR_QUEUE_LENGTH, sizeof(motion_sensor_reading_t));
+    QueueHandle_t telemetryQueue = xQueueCreate(SENSOR_QUEUE_LENGTH, sizeof(motion_orientation_t));
+    QueueHandle_t lcdQueue = xQueueCreate(SENSOR_QUEUE_LENGTH, sizeof(motion_orientation_t));
     if (telemetryQueue == nullptr || lcdQueue == nullptr) {
         return ESP_ERR_NO_MEM;
     }

@@ -22,9 +22,8 @@ export function useSmoothedTelemetry(): TelemetryReading | undefined {
           currentRef.current = { ...targetRef.current }
         } else {
           currentRef.current = {
-            accelX: lerpTelemetry(currentRef.current.accelX, targetRef.current.accelX, LERP_FACTOR),
-            accelY: lerpTelemetry(currentRef.current.accelY, targetRef.current.accelY, LERP_FACTOR),
-            accelZ: lerpTelemetry(currentRef.current.accelZ, targetRef.current.accelZ, LERP_FACTOR)
+            roll: lerpTelemetry(currentRef.current.roll, targetRef.current.roll, LERP_FACTOR),
+            pitch: lerpTelemetry(currentRef.current.pitch, targetRef.current.pitch, LERP_FACTOR)
           }
         }
         setState({ ...currentRef.current })

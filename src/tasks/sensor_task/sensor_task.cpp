@@ -1,6 +1,8 @@
 #include "tasks/sensor_task/sensor_task.hpp"
 #include "sensors/motion_sensor.h"
+#include "sensors/orientation/orientation_filter.h"
 #include "freertos/task.h"
+#include "esp_timer.h"
 #include <esp_log.h>
 #include <vector>
 
@@ -8,6 +10,7 @@ namespace {
 constexpr uint32_t kSensorReadIntervalMs = 10;
 constexpr uint32_t kSensorTaskStackSize = 2048;
 constexpr UBaseType_t kSensorTaskPriority = 2;
+constexpr float kMicrosecondsPerSecond = 1e6f;
 
 struct SensorTaskArgs {
     std::vector<QueueHandle_t> queues;
@@ -22,11 +25,23 @@ void sensorTask(void* arg) {
 
     auto* args = static_cast<SensorTaskArgs*>(arg);
     motion_sensor_reading_t reading;
+    // Sole caller of orientation_filter_update(): its fused state is not
+    // thread-safe, so only this task may drive it.
+    int64_t last_read_us = 0;
 
     while (true) {
-        if (motion_sensor_read_accel(&reading)) {
+        if (motion_sensor_read(&reading)) {
+            int64_t now_us = esp_timer_get_time();
+            float dt_seconds = (last_read_us == 0) ? 0.0f : (float)(now_us - last_read_us) / kMicrosecondsPerSecond;
+            last_read_us = now_us;
+
+            motion_orientation_t orientation = orientation_filter_update(
+                reading.accel_x, reading.accel_y, reading.accel_z,
+                reading.gyro_x, reading.gyro_y,
+                dt_seconds);
+
             for (QueueHandle_t queue : args->queues) {
-                xQueueSend(queue, &reading, 0);
+                xQueueSend(queue, &orientation, 0);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(kSensorReadIntervalMs));

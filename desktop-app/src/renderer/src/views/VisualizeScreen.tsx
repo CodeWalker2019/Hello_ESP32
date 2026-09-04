@@ -3,7 +3,6 @@ import Cube3D from '@renderer/components/Cube3D'
 import Header from '@renderer/components/Header'
 import Readout from '@renderer/components/Readout'
 import { useSmoothedTelemetry } from '@renderer/helpers/useSmoothedTelemetry'
-import { computeOrientation, countsToG } from '@renderer/helpers/telemetryMath'
 import { formatSigned } from '@renderer/helpers/format'
 import type { DeviceType } from '@renderer/types'
 
@@ -20,13 +19,8 @@ function VisualizeScreen({
 }: VisualizeScreenProps): React.JSX.Element {
   const state = useSmoothedTelemetry()
 
-  const accelX = state ? countsToG(state.accelX) : undefined
-  const accelY = state ? countsToG(state.accelY) : undefined
-  const accelZ = state ? countsToG(state.accelZ) : undefined
-
-  const { roll, pitch, yaw } = state
-    ? computeOrientation(state)
-    : { roll: undefined, pitch: undefined, yaw: undefined }
+  const roll = state?.roll
+  const pitch = state?.pitch
 
   const isWifi = connectionType === 'wifi'
 
@@ -56,10 +50,10 @@ function VisualizeScreen({
 
       <div className="flex min-h-0 flex-1 flex-col px-20 pt-10 pb-12">
         <div className="relative min-h-0 flex-1">
-          <Cube3D pitch={pitch} roll={roll} yaw={yaw} />
+          <Cube3D pitch={pitch} roll={roll} />
         </div>
 
-        <div className="mt-9 grid grid-cols-3 gap-x-10 gap-y-6.5">
+        <div className="mt-9 grid grid-cols-2 gap-x-10 gap-y-6.5">
           <Readout
             variant="orientation"
             label="Roll"
@@ -71,30 +65,6 @@ function VisualizeScreen({
             label="Pitch"
             value={pitch !== undefined ? formatSigned(pitch, 1) : '--'}
             unit="°"
-          />
-          <Readout
-            variant="orientation"
-            label="Yaw"
-            value={yaw !== undefined ? formatSigned(yaw, 1) : '--'}
-            unit="°"
-          />
-          <Readout
-            variant="accel"
-            label="Accel X"
-            value={accelX !== undefined ? formatSigned(accelX, 2) : '--'}
-            unit="g"
-          />
-          <Readout
-            variant="accel"
-            label="Accel Y"
-            value={accelY !== undefined ? formatSigned(accelY, 2) : '--'}
-            unit="g"
-          />
-          <Readout
-            variant="accel"
-            label="Accel Z"
-            value={accelZ !== undefined ? formatSigned(accelZ, 2) : '--'}
-            unit="g"
           />
         </div>
       </div>

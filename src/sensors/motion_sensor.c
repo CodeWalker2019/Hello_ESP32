@@ -1,6 +1,7 @@
 #include "sensors/motion_sensor.h"
 #include <esp_log.h>
 #include "driver/i2c_master.h"
+#include "esp_timer.h"
 
 static const char* TAG = "MotionSensor";
 
@@ -43,6 +44,16 @@ bool motion_sensor_init(void) {
         return false;
     }
 
+    uint8_t dlpf_cmd[2] = { MPU6050_REG_CONFIG, MPU6050_CONFIG_DLPF_CFG_3 };
+    err = i2c_master_transmit(
+        s_dev_handle, dlpf_cmd, sizeof(dlpf_cmd), 1000
+    );
+
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure DLPF: %d", err);
+        return false;
+    }
+
     return true;
 }
 
@@ -66,14 +77,14 @@ bool motion_sensor_check_present(void) {
     return who_am_i == MOTION_SENSOR_WHO_AM_I_EXPECTED;
 }
 
-bool motion_sensor_read_accel(motion_sensor_reading_t* out) {
-    uint8_t raw[6];
+bool motion_sensor_read(motion_sensor_reading_t* out) {
+    uint8_t raw[14];
     uint8_t reg = MPU6050_REG_ACCEL_XOUT_H;
 
     esp_err_t err = i2c_master_transmit_receive(
         s_dev_handle,
         &reg, 1,
-        raw, 6,
+        raw, 14,
         1000
     );
 
@@ -84,6 +95,31 @@ bool motion_sensor_read_accel(motion_sensor_reading_t* out) {
     out->accel_x = (raw[0] << 8) | raw[1];
     out->accel_y = (raw[2] << 8) | raw[3];
     out->accel_z = (raw[4] << 8) | raw[5];
+    // raw[6..7] is TEMP_OUT, unused.
+    out->gyro_x = (raw[8] << 8) | raw[9];
+    out->gyro_y = (raw[10] << 8) | raw[11];
+    out->gyro_z = (raw[12] << 8) | raw[13];
 
+    return true;
+}
+
+bool read_motion_sensor_data(motion_orientation_t* out) {
+    motion_sensor_reading_t reading;
+    if (!motion_sensor_read(&reading)) {
+        return false;
+    }
+
+    static int64_t s_last_read_us = 0;
+    int64_t now_us = esp_timer_get_time();
+    float dt_seconds = (s_last_read_us == 0) ? 0.0f : (float)(now_us - s_last_read_us) / 1e6f;
+    s_last_read_us = now_us;
+
+    // Yaw is intentionally not computed: the MPU6050 has no magnetometer, so
+    // yaw would be uncorrected gyro dead-reckoning with no reference to pull
+    // it back toward truth, and it would drift indefinitely. Only pitch/roll
+    // are reported, since both are continuously corrected against gravity.
+    *out = orientation_filter_update(reading.accel_x, reading.accel_y, reading.accel_z,
+                                      reading.gyro_x, reading.gyro_y,
+                                      dt_seconds);
     return true;
 }

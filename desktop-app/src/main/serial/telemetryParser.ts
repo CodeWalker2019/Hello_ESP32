@@ -1,4 +1,4 @@
-import { TELEMETRY_MAGIC, TELEMETRY_PACKET_LENGTH } from './constants'
+import { TELEMETRY_MAGIC, TELEMETRY_PACKET_LENGTH, TELEMETRY_DEGREE_SCALE } from './constants'
 import type { TelemetryReading } from '../../shared/types'
 
 export class TelemetryParser {
@@ -24,9 +24,8 @@ export class TelemetryParser {
 
       const packet = this.buffer.subarray(magicIndex, magicIndex + TELEMETRY_PACKET_LENGTH)
       readings.push({
-        accelX: packet.readInt16BE(3),
-        accelY: packet.readInt16BE(5),
-        accelZ: packet.readInt16BE(7)
+        roll: packet.readInt16BE(3) / TELEMETRY_DEGREE_SCALE,
+        pitch: packet.readInt16BE(5) / TELEMETRY_DEGREE_SCALE
       })
 
       this.buffer = this.buffer.subarray(magicIndex + TELEMETRY_PACKET_LENGTH)
