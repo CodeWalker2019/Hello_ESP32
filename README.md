@@ -1,11 +1,13 @@
 # Project
-
 An ESP32-based IMU orientation tracker with a companion desktop app. The device reads a 6-axis IMU, fuses accelerometer and gyroscope data into a live roll/pitch estimate, shows it on an onboard LCD, and streams it to a desktop app over USB or Wi-Fi, where it drives a real-time 3D visualization.
 
 Built from the datasheet and register level up — no display or IMU libraries, no framework abstractions hiding the protocol work.
 
-<!-- TODO: demo video/GIF goes here -->
-<!-- TODO: architecture / wiring photo goes here -->
+<img width="1087" height="564" alt="image" src="https://github.com/user-attachments/assets/dd8f0f54-dc0f-4142-9f6c-0568164ff6f0" />
+<p align="center">
+  <img width="640" height="390" alt="test_compressed" src="https://github.com/user-attachments/assets/380b155f-1e4c-4683-a34e-2e91ba503f54" />
+</p>
+
 
 ## What it does
 
