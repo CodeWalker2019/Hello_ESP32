@@ -5,7 +5,7 @@ Built from the datasheet and register level up — no display or IMU libraries, 
 
 <img width="1087" height="564" alt="image" src="https://github.com/user-attachments/assets/dd8f0f54-dc0f-4142-9f6c-0568164ff6f0" />
 <p align="center">
-  <img width="640" height="390" alt="test_compressed" src="https://github.com/user-attachments/assets/380b155f-1e4c-4683-a34e-2e91ba503f54" />
+  <img width="640" height="390" alt="demo" src="https://github.com/user-attachments/assets/e73cb0fc-e087-47de-8ea6-b287308dced2" />
 </p>
 
 
